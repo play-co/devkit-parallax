@@ -1,25 +1,114 @@
-import animate;
 import ui.View as View;
 import ui.ImageView as ImageView;
 import ui.resource.Image as Image;
 import ui.ViewPool as ViewPool;
 
 import src.lib.utils as utils;
-import src.conf.parallaxConfig as parallaxConfig;
 
-var random = Math.random;
 var choose = utils.choose;
 var rollInt = utils.rollInt;
 var rollFloat = utils.rollFloat;
-
-var BG_WIDTH = G_BG_WIDTH;
-var BG_HEIGHT = G_BG_HEIGHT;
-var FADE_TIME = 250;
-
-var gameView;
+var random = Math.random;
 var imgCache = {};
 
-var ParallaxLayer = Class(View, function() {
+exports = Class(function() {
+	var layerPool;
+	var piecePool;
+
+	this.init = function(opts) {
+		layerPool = new ViewPool({
+			ctor: opts.layerCtor || Layer,
+			initCount: opts.layerInitCount || 0
+		});
+		piecePool = new ViewPool({
+			ctor: opts.pieceCtor || ImageView,
+			initCount: opts.pieceInitCount || 0
+		});
+		this.rootView = opts.rootView || opts.parent || opts.superview;
+		this.layers = [];
+	};
+
+	this.reset = function(config) {
+		this.releaseLayers();
+		this.initializeLayers(config);
+	};
+
+	this.releaseLayers = function() {
+		var layers = this.layers;
+		while (layers.length) {
+			var layer = layers.pop();
+			var pieces = layer.pieces;
+			while (pieces.length) {
+				var piece = pieces.pop();
+				piece.removeFromSuperview();
+				piecePool.releaseView(piece);
+			}
+			layer.removeFromSuperview();
+			layerPool.releaseView(layer);
+		}
+	};
+
+	this.initializeLayers = function(config) {
+		var layers = this.layers;
+		for (var i = 0; i < config.length; i++) {
+			var layerConf = config[i];
+			var layer = layerPool.obtainView({ parent: this.rootView });
+			layer.reset(layerConf, i);
+			layers.push(layer);
+		}
+	};
+
+	this.update = function(x, y) {
+		var layers = this.layers;
+		for (var l = 0, len = layers.length; l < len; l++) {
+			var layer = layers[l];
+			var layerX = layer.style.x = ~~(x * layer.speedRatio);
+			var layerY = layer.style.y = ~~(y * layer.speedRatio);
+			this.releaseHorzPieces(layer, layerX);
+			this.releaseVertPieces(layer, layerY);
+			this.spawnHorzPieces(layer, layerX);
+			this.spawnVertPieces(layer, layerY);
+		}
+	};
+
+	this.releaseHorzPieces = function(layer, x) {
+		var pieces = layer.pieces;
+		var piece = pieces[0];
+		while (piece && piece.style.y >= y + BG_HEIGHT) {
+			pieces.shift();
+			piecePool.releaseView(piece);
+			piece = pieces[0];
+		}
+	};
+
+	this.releaseVertPieces = function(layer, y) {
+		var pieces = layer.pieces;
+		var piece = pieces[0];
+		while (piece && piece.style.y >= -y + BG_HEIGHT) {
+			pieces.shift();
+			piecePool.releaseView(piece);
+			piece = pieces[0];
+		}
+	};
+
+	this.spawnPieces = function(layer, y) {
+		var pieceOptions = layer.pieceOptions;
+		while (layer.y >= -y - BG_HEIGHT) {
+			if (layer.ordered) {
+				var index = layer.pieceIndex;
+				layer.pieceIndex++;
+				if (layer.pieceIndex >= pieceOptions.length) {
+					layer.pieceIndex = 0;
+				}
+				layer.spawnPiece(pieceOptions[index], piecePool);
+			} else {
+				layer.spawnPiece(choose(pieceOptions), piecePool);
+			}
+		}
+	};
+});
+
+var Layer = exports.Layer = Class(View, function() {
 	var sup = View.prototype;
 
 	this.init = function(opts) {
@@ -67,8 +156,8 @@ var ParallaxLayer = Class(View, function() {
 		imgData.y = data.y || 0;
 		imgData.width = data.width || b.width + b.marginLeft + b.marginRight;
 		imgData.height = data.height || b.height + b.marginTop + b.marginBottom;
-		imgData.anchorX = imgData.width / 2;
-		imgData.anchorY = imgData.height / 2;
+		imgData.anchorX = data.anchorX || imgData.width / 2;
+		imgData.anchorY = data.anchorY || imgData.height / 2;
 		imgData.scale = data.scale !== void 0 ? data.scale : 1;
 		imgData.opacity = data.opacity !== void 0 ? data.opacity : 1;
 		imgData.flipX = data.flipX || false;
@@ -106,95 +195,5 @@ var ParallaxLayer = Class(View, function() {
 		var gapRange = this.gapRange;
 		var gap = gapRange ? rollInt(gapRange.min, gapRange.max) : 0;
 		this.y -= (imgData.height - 1) + gap;
-	};
-});
-
-exports = Class(function() {
-	var layerPool = new ViewPool({
-		ctor: ParallaxLayer,
-		initCount: 5
-	});
-	var piecePool = new ViewPool({
-		ctor: ImageView,
-		initCount: 20
-	});
-
-	this.init = function(opts) {
-		gameView = opts.gameView;
-		this.rootView = opts.parent;
-		this.layers = [];
-	};
-
-	this.reset = function(levelID) {
-		this.releaseLayers();
-		this.initializeLayers(parallaxConfig[levelID]);
-	};
-
-	this.releaseLayers = function() {
-		var layers = this.layers;
-		while (layers.length) {
-			var layer = layers.pop();
-			var pieces = layer.pieces;
-			while (pieces.length) {
-				var piece = pieces.pop();
-				piece.removeFromSuperview();
-				piecePool.releaseView(piece);
-			}
-			layer.removeFromSuperview();
-			layerPool.releaseView(layer);
-		}
-	};
-
-	this.initializeLayers = function(config) {
-		var layers = this.layers;
-		for (var i = 0; i < config.length; i++) {
-			var layerConf = config[i];
-			var layer = layerPool.obtainView({ parent: this.rootView });
-			layer.reset(layerConf, i);
-			layers.push(layer);
-		}
-	};
-
-	this.update = function(dt) {
-		var layers = this.layers;
-		var screenY = gameView.player.getScreenY();
-		for (var l = 0, len = layers.length; l < len; l++) {
-			var layer = layers[l];
-			var layerY = layer.style.y = ~~(-screenY * layer.speedRatio);
-			this.releaseOffscreenPieces(layer, layerY);
-			this.spawnPieces(layer, layerY);
-		}
-	};
-
-	this.releaseOffscreenPieces = function(layer, y) {
-		var pieces = layer.pieces;
-		var piece = pieces[0];
-		while (piece && piece.style.y >= -y + BG_HEIGHT) {
-			pieces.shift();
-			piecePool.releaseView(piece);
-			piece = pieces[0];
-		}
-	};
-
-	this.spawnPieces = function(layer, y) {
-		var pieceOptions = layer.pieceOptions;
-		while (layer.y >= -y - BG_HEIGHT) {
-			if (layer.ordered) {
-				var index = layer.pieceIndex;
-				layer.pieceIndex++;
-				if (layer.pieceIndex >= pieceOptions.length) {
-					layer.pieceIndex = 0;
-				}
-				layer.spawnPiece(pieceOptions[index], piecePool);
-			} else {
-				layer.spawnPiece(choose(pieceOptions), piecePool);
-			}
-		}
-	};
-
-	this.fadeLayer = function(index, opacity) {
-		animate(this.layers[index]).now({
-			opacity: opacity
-		}, FADE_TIME, animate.linear);
 	};
 });

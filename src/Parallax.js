@@ -3,94 +3,161 @@ import ui.ImageView as ImageView;
 import ui.resource.Image as Image;
 import ui.ViewPool as ViewPool;
 
-import src.lib.utils as utils;
-
-var choose = utils.choose;
-var rollInt = utils.rollInt;
-var rollFloat = utils.rollFloat;
+// math and random utilities
+var floor = Math.floor;
 var random = Math.random;
+var choose = function(arr) { return arr[floor(random() * arr.length)]; };
+var rollFloat = function(mn, mx) { return mn + random() * (mx - mn); };
+var rollInt = function(mn, mx) { return floor(mn + random() * (1 + mx - mn)); };
+
+// image object and config data cache
 var imgCache = {};
 
+// the Parallax Class
 exports = Class(function() {
 	var layerPool;
 	var piecePool;
 
+	/**
+	 * init: the constructor function of Parallax
+	 * ~ accepts an opts object parameter with these optional properties
+	 *     ~ rootView: the parent of all parallax layer views (REQUIRED)
+	 *     ~ layerCtor: the constructor used for layers, default is LayerView
+	 *     ~ layerInitCount: number of layers to init in the pool, default is 0
+	 *     ~ pieceCtor: the constructor used for pieces, default is ImageView
+	 *     ~ pieceInitCount: number of pieces to init in the pool, default is 0
+	 */
 	this.init = function(opts) {
+		// layers' parent: its dimensions determine recycling/spawning of pieces
+		this.rootView = opts.rootView || opts.parent || opts.superview;
+		// layer views: recycled and initialized from config on reset
 		layerPool = new ViewPool({
-			ctor: opts.layerCtor || Layer,
+			ctor: opts.layerCtor || LayerView,
 			initCount: opts.layerInitCount || 0
 		});
+		// image views placed on layers: recycled as layers move
 		piecePool = new ViewPool({
 			ctor: opts.pieceCtor || ImageView,
 			initCount: opts.pieceInitCount || 0
 		});
-		this.rootView = opts.rootView || opts.parent || opts.superview;
-		this.layers = [];
 	};
 
+	/**
+	 * reset: prepares the parallax for use based on provided config
+	 * ~ see README.md for details on config parameter
+	 */
 	this.reset = function(config) {
 		this.releaseLayers();
 		this.initializeLayers(config);
 	};
 
+	/**
+	 * releaseLayers: release all parallax views to their respective pools
+	 */
 	this.releaseLayers = function() {
-		var layers = this.layers;
-		while (layers.length) {
-			var layer = layers.pop();
-			var pieces = layer.pieces;
-			while (pieces.length) {
-				var piece = pieces.pop();
-				piece.removeFromSuperview();
-				piecePool.releaseView(piece);
-			}
+		layerPool.forEachActiveView(function(layer, i) {
+			layer.pieces.length = 0;
 			layer.removeFromSuperview();
 			layerPool.releaseView(layer);
-		}
+		}, this);
+		piecePool.forEachActiveView(function(piece, i) {
+			piece.removeFromSuperview();
+			piecePool.releaseView(piece);
+		}, this);
 	};
 
+	/**
+	 * initializeLayers: prepare layers based on config for a fresh parallax
+	 * ~ see README.md for details on config parameter
+	 */
 	this.initializeLayers = function(config) {
-		var layers = this.layers;
-		for (var i = 0; i < config.length; i++) {
-			var layerConf = config[i];
+		for (var i = 0, len = config.length; i < len; i++) {
 			var layer = layerPool.obtainView({ parent: this.rootView });
-			layer.reset(layerConf, i);
-			layers.push(layer);
+			layer.reset(config[i], i);
 		}
 	};
 
+	/**
+	 * update: should be called once per tick with updated coordinates
+	 * ~ x: the horizontal coordinate of the parallax, starts at 0
+	 * ~ y: the vertical coordinate of the parallax, starts at 0
+	 */
 	this.update = function(x, y) {
-		var layers = this.layers;
-		for (var l = 0, len = layers.length; l < len; l++) {
-			var layer = layers[l];
-			var layerX = layer.style.x = ~~(x * layer.speedRatio);
-			var layerY = layer.style.y = ~~(y * layer.speedRatio);
-			this.releaseHorzPieces(layer, layerX);
-			this.releaseVertPieces(layer, layerY);
-			this.spawnHorzPieces(layer, layerX);
-			this.spawnVertPieces(layer, layerY);
-		}
+		layerPool.forEachActiveView(function(layer, i) {
+			var layerX = layer.style.x = ~~(x * layer.speedRatioHorz);
+			layer.releaseHorz && this.releasePiecesHorz(layer, layerX);
+			layer.spawnHorz && this.spawnPiecesHorz(layer, layerX);
+			var layerY = layer.style.y = ~~(y * layer.speedRatioVert);
+			layer.releaseVert && this.releasePiecesVert(layer, layerY);
+			layer.spawnVert && this.spawnPiecesVert(layer, layerY);
+		}, this);
 	};
 
-	this.releaseHorzPieces = function(layer, x) {
+	/**
+	 * releasePiecesHorz: release pieces out of rootView's horizontal bounds
+	 * ~ layer: the layer whose pieces we're checking
+	 * ~ x: the position of the layer relative to rootView
+	 */
+	this.releasePiecesHorz = function(layer, x) {
+		var dx = x - layer.x;
+		var rvs = this.rootView.style;
 		var pieces = layer.pieces;
-		var piece = pieces[0];
-		while (piece && piece.style.y >= y + BG_HEIGHT) {
-			pieces.shift();
-			piecePool.releaseView(piece);
-			piece = pieces[0];
+		var finished = false;
+
+		if (dx > 0) {
+			while (pieces.length && !finished) {
+				var piece = pieces[pieces.length - 1];
+				if (piece.style.x >= -x + rvs.width) {
+					piecePool.releaseView(pieces.pop());
+				} else {
+					finished = true;
+				}
+			}
+		} else if (dx < 0) {
+			while (pieces.length && !finished) {
+				var piece = pieces[0];
+				if (piece.style.x + piece.style.width <= -x) {
+					piecePool.releaseView(pieces.shift());
+				} else {
+					finished = true;
+				}
+			}
 		}
 	};
 
-	this.releaseVertPieces = function(layer, y) {
+	/**
+	 * releasePiecesVert: release pieces out of rootView's vertical bounds
+	 * ~ layer: the layer whose pieces we're checking
+	 * ~ y: the position of the layer relative to rootView
+	 */
+	this.releasePiecesVert = function(layer, y) {
+		var dy = y - layer.y;
+		var rvs = this.rootView.style;
 		var pieces = layer.pieces;
-		var piece = pieces[0];
-		while (piece && piece.style.y >= -y + BG_HEIGHT) {
-			pieces.shift();
-			piecePool.releaseView(piece);
-			piece = pieces[0];
+		var finished = false;
+
+		if (dy > 0) {
+			while (pieces.length && !finished) {
+				var piece = pieces[pieces.length - 1];
+				if (piece.style.y >= -y + rvs.height) {
+					piecePool.releaseView(pieces.pop());
+				} else {
+					finished = true;
+				}
+			}
+		} else if (dy < 0) {
+			while (pieces.length && !finished) {
+				var piece = pieces[0];
+				if (piece.style.y + piece.style.height <= -y) {
+					piecePool.releaseView(pieces.shift());
+				} else {
+					finished = true;
+				}
+			}
 		}
 	};
 
+	// TODO: generalize spawn logic
 	this.spawnPieces = function(layer, y) {
 		var pieceOptions = layer.pieceOptions;
 		while (layer.y >= -y - BG_HEIGHT) {
@@ -108,7 +175,8 @@ exports = Class(function() {
 	};
 });
 
-var Layer = exports.Layer = Class(View, function() {
+// TODO: generalize layer class and bring up-to-date with parallax changes
+var LayerView = exports.LayerView = Class(View, function() {
 	var sup = View.prototype;
 
 	this.init = function(opts) {
@@ -116,6 +184,10 @@ var Layer = exports.Layer = Class(View, function() {
 
 		this.x = 0;
 		this.y = 0;
+		this.xSpawnMin = 0;
+		this.xSpawnMax = 0;
+		this.ySpawnMin = 0;
+		this.ySpawnMax = 0;
 		this.index = 0;
 		this.ordered = false;
 		this.pieceIndex = 0;
@@ -128,6 +200,10 @@ var Layer = exports.Layer = Class(View, function() {
 	this.reset = function(config, index) {
 		this.x = 0;
 		this.y = 0;
+		this.xSpawnMin = 0;
+		this.xSpawnMax = 0;
+		this.ySpawnMin = 0;
+		this.ySpawnMax = 0;
 		this.index = index;
 		this.ordered = config.ordered || false;
 		this.pieceIndex = 0;

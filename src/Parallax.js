@@ -121,6 +121,7 @@ exports = Class(function() {
 			while (pieces.length && !finished) {
 				var piece = pieces[pieces.length - 1];
 				if (piece.style.x >= -x + rvs.width) {
+					layer.xSpawnMax = piece.style.x;
 					piecePool.releaseView(pieces.pop());
 				} else {
 					finished = true;
@@ -161,6 +162,7 @@ exports = Class(function() {
 			while (pieces.length && !finished) {
 				var piece = pieces[0];
 				if (piece.style.x + piece.style.width <= -x) {
+					layer.xSpawnMin = piece.style.x + piece.style.width;
 					piecePool.releaseView(pieces.shift());
 				} else {
 					finished = true;
@@ -201,6 +203,7 @@ exports = Class(function() {
 			while (pieces.length && !finished) {
 				var piece = pieces[pieces.length - 1];
 				if (piece.style.y >= -y + rvs.height) {
+					layer.ySpawnMax = piece.style.y;
 					piecePool.releaseView(pieces.pop());
 				} else {
 					finished = true;
@@ -241,6 +244,7 @@ exports = Class(function() {
 			while (pieces.length && !finished) {
 				var piece = pieces[0];
 				if (piece.style.y + piece.style.height <= -y) {
+					layer.ySpawnMin = piece.style.y + piece.style.height;
 					piecePool.releaseView(pieces.shift());
 				} else {
 					finished = true;
@@ -328,6 +332,8 @@ var LayerView = exports.LayerView = Class(View, function() {
 		this.pieces = [];
 
 		var s = this.style;
+		s.x = config.x || 0;
+		s.y = config.y || 0;
 		s.width = config.width || 1;
 		s.height = config.height || 1;
 		s.zIndex = config.zIndex || 1;

@@ -363,6 +363,8 @@ var LayerView = exports.LayerView = Class(View, function() {
 		pieceData.flipY = data.flipY || false;
 		pieceData.compositeOperation = data.compositeOperation || "";
 		pieceData.styleRanges = data.styleRanges || [];
+		pieceData.xAlign = data.xAlign || "left";
+		pieceData.yAlign = data.yAlign || "top";
 	};
 
 	this.spawnPieceLeft = function(data, pool) {
@@ -372,6 +374,7 @@ var LayerView = exports.LayerView = Class(View, function() {
 		piece.style.x = this.xSpawnMin + pieceData.x - pieceData.width;
 		piece.style.y = this.ySpawnMin + pieceData.y;
 		this.applyStyleRanges(piece, pieceData);
+		this.alignY(piece, pieceData);
 		// next spawn with a one pixel overlap to avoid layer tears?
 		var tearOffset = this.preventTearing ? 1 : 0;
 		var gap = rollInt(this.xGapRange.min, this.xGapRange.max);
@@ -385,6 +388,7 @@ var LayerView = exports.LayerView = Class(View, function() {
 		piece.style.x = this.xSpawnMax + pieceData.x;
 		piece.style.y = this.ySpawnMin + pieceData.y;
 		this.applyStyleRanges(piece, pieceData);
+		this.alignY(piece, pieceData);
 		// next spawn with a one pixel overlap to avoid layer tears?
 		var tearOffset = this.preventTearing ? 1 : 0;
 		var gap = rollInt(this.xGapRange.min, this.xGapRange.max);
@@ -398,6 +402,7 @@ var LayerView = exports.LayerView = Class(View, function() {
 		piece.style.x = this.xSpawnMin + pieceData.x;
 		piece.style.y = this.ySpawnMin + pieceData.y - pieceData.height;
 		this.applyStyleRanges(piece, pieceData);
+		this.alignX(piece, pieceData);
 		// next spawn with a one pixel overlap to avoid layer tears?
 		var tearOffset = this.preventTearing ? 1 : 0;
 		var gap = rollInt(this.yGapRange.min, this.yGapRange.max);
@@ -411,6 +416,7 @@ var LayerView = exports.LayerView = Class(View, function() {
 		piece.style.x = this.xSpawnMin + pieceData.x;
 		piece.style.y = this.ySpawnMax + pieceData.y;
 		this.applyStyleRanges(piece, pieceData);
+		this.alignX(piece, pieceData);
 		// next spawn with a one pixel overlap to avoid layer tears?
 		var tearOffset = this.preventTearing ? 1 : 0;
 		var gap = rollInt(this.yGapRange.min, this.yGapRange.max);
@@ -436,6 +442,22 @@ var LayerView = exports.LayerView = Class(View, function() {
 		for (var i = 0; i < ranges.length; i++) {
 			var range = ranges[i];
 			piece.style[range[0]] = rollFloat(range[1], range[2]);
+		}
+	};
+
+	this.alignX = function(piece, pieceData) {
+		if (pieceData.xAlign === "center") {
+			piece.style.x -= piece.style.width / 2;
+		} else if (pieceData.xAlign === "right") {
+			piece.style.x -= piece.style.width;
+		}
+	};
+
+	this.alignY = function(piece, pieceData) {
+		if (pieceData.yAlign === "center") {
+			piece.style.y -= piece.style.height / 2;
+		} else if (pieceData.yAlign === "bottom") {
+			piece.style.y -= piece.style.height;
 		}
 	};
 });

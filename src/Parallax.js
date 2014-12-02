@@ -341,15 +341,15 @@ var LayerView = exports.LayerView = Class(View, function() {
 		// process layer image data
 		var pieceOptions = config.pieceOptions;
 		for (var i = 0; i < pieceOptions.length; i++) {
-			var piece = pieceOptions[i];
-			if (piece.id === void 0) {
-				piece.id = _uid++;
+			var pieceData = pieceOptions[i];
+			if (pieceData.id === void 0) {
+				pieceData.id = _uid++;
 			}
-			!pieceCache[piece.id] && this.cachePiece(piece);
+			!pieceCache[pieceData.id] && this.cachePieceData(pieceData);
 		}
 	};
 
-	this.cachePiece = function(data) {
+	this.cachePieceData = function(data) {
 		var pieceData = pieceCache[data.id] = {};
 		pieceData.img = new Image({ url: data.image });
 		pieceData.x = data.x || 0;

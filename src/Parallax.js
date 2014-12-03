@@ -14,9 +14,6 @@ var pieceCache = {};
 
 // the Parallax Class
 exports = Class(function() {
-	var layerPool;
-	var piecePool;
-
 	/**
 	 * init: the constructor function of Parallax
 	 * ~ accepts an opts object parameter with these optional properties
@@ -30,15 +27,12 @@ exports = Class(function() {
 		// layers' parent: its dimensions determine recycling/spawning of pieces
 		this.rootView = opts.rootView || opts.parent || opts.superview;
 		// layer views: recycled and initialized from config on reset
-		layerPool = new ViewPool({
+		this.layerPool = new ViewPool({
 			ctor: opts.layerCtor || LayerView,
 			initCount: opts.layerInitCount || 0
 		});
-		// image views placed on layers: recycled as layers move
-		piecePool = new ViewPool({
-			ctor: opts.pieceCtor || ImageView,
-			initCount: opts.pieceInitCount || 0
-		});
+		// save opts for later
+		this._opts = opts;
 	};
 
 	/**
@@ -54,14 +48,11 @@ exports = Class(function() {
 	 * releaseLayers: release all parallax views to their respective pools
 	 */
 	this.releaseLayers = function() {
-		layerPool.forEachActiveView(function(layer, i) {
+		this.layerPool.forEachActiveView(function(layer, i) {
 			layer.pieces.length = 0;
 			layer.removeFromSuperview();
-			layerPool.releaseView(layer);
-		}, this);
-		piecePool.forEachActiveView(function(piece, i) {
-			piece.removeFromSuperview();
-			piecePool.releaseView(piece);
+			layer.piecePool.releaseAllViews();
+			this.layerPool.releaseView(layer);
 		}, this);
 	};
 
@@ -71,7 +62,8 @@ exports = Class(function() {
 	 */
 	this.initializeLayers = function(config) {
 		for (var i = 0, len = config.length; i < len; i++) {
-			var layer = layerPool.obtainView({ parent: this.rootView });
+			var layerOpts = merge({ parent: this.rootView }, this._opts);
+			var layer = this.layerPool.obtainView(layerOpts);
 			layer.reset(config[i], i);
 			// populate initial layers to fill the screen
 			this.moveLayerLeft(layer, 0);
@@ -85,7 +77,7 @@ exports = Class(function() {
 	 * ~ y: the vertical coordinate of the parallax, starts at 0
 	 */
 	this.update = function(x, y) {
-		layerPool.forEachActiveView(function(layer, i) {
+		this.layerPool.forEachActiveView(function(layer, i) {
 			var layerX = ~~(x * layer.xMultiplier);
 			var dx = layerX - layer.style.x;
 			if (dx > 0) {
@@ -121,7 +113,7 @@ exports = Class(function() {
 				var piece = pieces[pieces.length - 1];
 				if (piece.style.x >= -x + rvs.width) {
 					layer.xSpawnMax = piece.style.x;
-					piecePool.releaseView(pieces.pop());
+					layer.piecePool.releaseView(pieces.pop());
 				} else {
 					finished = true;
 				}
@@ -131,7 +123,7 @@ exports = Class(function() {
 		if (layer.xCanSpawn) {
 			// spawn pieces about to appear on the left
 			while (layer.xSpawnMin > -x) {
-				layer.spawnPieceLeft(piecePool);
+				layer.spawnPieceLeft();
 			}
 		}
 	};
@@ -153,7 +145,7 @@ exports = Class(function() {
 				var piece = pieces[0];
 				if (piece.style.x + piece.style.width <= -x) {
 					layer.xSpawnMin = piece.style.x + piece.style.width;
-					piecePool.releaseView(pieces.shift());
+					layer.piecePool.releaseView(pieces.shift());
 				} else {
 					finished = true;
 				}
@@ -163,7 +155,7 @@ exports = Class(function() {
 		if (layer.xCanSpawn) {
 			// spawn pieces about to appear on the right
 			while (layer.xSpawnMax < -x + rvs.width) {
-				layer.spawnPieceRight(piecePool);
+				layer.spawnPieceRight();
 			}
 		}
 	};
@@ -185,7 +177,7 @@ exports = Class(function() {
 				var piece = pieces[pieces.length - 1];
 				if (piece.style.y >= -y + rvs.height) {
 					layer.ySpawnMax = piece.style.y;
-					piecePool.releaseView(pieces.pop());
+					layer.piecePool.releaseView(pieces.pop());
 				} else {
 					finished = true;
 				}
@@ -195,7 +187,7 @@ exports = Class(function() {
 		if (layer.yCanSpawn) {
 			// spawn pieces about to appear on the top
 			while (layer.ySpawnMin > -y) {
-				layer.spawnPieceUp(piecePool);
+				layer.spawnPieceUp();
 			}
 		}
 	};
@@ -217,7 +209,7 @@ exports = Class(function() {
 				var piece = pieces[0];
 				if (piece.style.y + piece.style.height <= -y) {
 					layer.ySpawnMin = piece.style.y + piece.style.height;
-					piecePool.releaseView(pieces.shift());
+					layer.piecePool.releaseView(pieces.shift());
 				} else {
 					finished = true;
 				}
@@ -227,7 +219,7 @@ exports = Class(function() {
 		if (layer.yCanSpawn) {
 			// spawn pieces about to appear on the bottom
 			while (layer.ySpawnMax < -y + rvs.height) {
-				layer.spawnPieceDown(piecePool);
+				layer.spawnPieceDown();
 			}
 		}
 	};
@@ -261,6 +253,11 @@ var LayerView = exports.LayerView = Class(View, function() {
 		this.ordered = false;
 		this.pieceOptions = [];
 		this.pieces = [];
+		// views placed on layers: recycled as layers move
+		this.piecePool = new ViewPool({
+			ctor: opts.pieceCtor || ImageView,
+			initCount: opts.pieceInitCount || 0
+		});
 	};
 
 	this.reset = function(config, index) {
@@ -334,10 +331,10 @@ var LayerView = exports.LayerView = Class(View, function() {
 		pieceData.yAlign = data.yAlign || "top";
 	};
 
-	this.spawnPieceLeft = function(pool) {
+	this.spawnPieceLeft = function() {
 		var index = this.getNextPieceIndex(-1);
 		var data = this.pieceOptions[index];
-		var piece = this.addPiece(data, pool);
+		var piece = this.addPiece(data);
 		var pieceData = pieceCache[data.id];
 		piece.index = index;
 		piece.style.x = this.xSpawnMin + pieceData.x - pieceData.width;
@@ -351,10 +348,10 @@ var LayerView = exports.LayerView = Class(View, function() {
 		this.xSpawnMin = piece.style.x + tearOffset - gap;
 	};
 
-	this.spawnPieceRight = function(pool) {
+	this.spawnPieceRight = function() {
 		var index = this.getNextPieceIndex(1);
 		var data = this.pieceOptions[index];
-		var piece = this.addPiece(data, pool);
+		var piece = this.addPiece(data);
 		var pieceData = pieceCache[data.id];
 		piece.index = index;
 		piece.style.x = this.xSpawnMax + pieceData.x;
@@ -368,10 +365,10 @@ var LayerView = exports.LayerView = Class(View, function() {
 		this.xSpawnMax = piece.style.x + piece.style.width - tearOffset + gap;
 	};
 
-	this.spawnPieceUp = function(pool) {
+	this.spawnPieceUp = function() {
 		var index = this.getNextPieceIndex(-1);
 		var data = this.pieceOptions[index];
-		var piece = this.addPiece(data, pool);
+		var piece = this.addPiece(data);
 		var pieceData = pieceCache[data.id];
 		piece.index = index;
 		piece.style.x = this.xSpawnMin + pieceData.x;
@@ -385,10 +382,10 @@ var LayerView = exports.LayerView = Class(View, function() {
 		this.ySpawnMin = piece.style.y + tearOffset - gap;
 	};
 
-	this.spawnPieceDown = function(pool) {
+	this.spawnPieceDown = function() {
 		var index = this.getNextPieceIndex(1);
 		var data = this.pieceOptions[index];
-		var piece = this.addPiece(data, pool);
+		var piece = this.addPiece(data);
 		var pieceData = pieceCache[data.id];
 		piece.index = index;
 		piece.style.x = this.xSpawnMin + pieceData.x;
@@ -420,8 +417,8 @@ var LayerView = exports.LayerView = Class(View, function() {
 		}
 	};
 
-	this.addPiece = function(data, pool) {
-		var piece = pool.obtainView({ parent: this });
+	this.addPiece = function(data) {
+		var piece = this.piecePool.obtainView({ parent: this });
 		var pieceData = pieceCache[data.id];
 		piece.updateOpts(pieceData);
 		piece.style.compositeOperation = pieceData.compositeOperation;

@@ -6,7 +6,6 @@ import ui.ViewPool as ViewPool;
 // math and random utilities
 var floor = Math.floor;
 var random = Math.random;
-var choose = function(arr) { return arr[floor(random() * arr.length)]; };
 var rollFloat = function(mn, mx) { return mn + random() * (mx - mn); };
 var rollInt = function(mn, mx) { return floor(mn + random() * (1 + mx - mn)); };
 
@@ -130,18 +129,9 @@ exports = Class(function() {
 		}
 
 		if (layer.xCanSpawn) {
-			// spawn to the left if necessary
-			var pieceOptions = layer.pieceOptions;
+			// spawn pieces about to appear on the left
 			while (layer.xSpawnMin > -x) {
-				if (layer.ordered) {
-					var index = layer.pieceIndex++;
-					if (layer.pieceIndex === pieceOptions.length) {
-						layer.pieceIndex = 0;
-					}
-					layer.spawnPieceLeft(pieceOptions[index], piecePool);
-				} else {
-					layer.spawnPieceLeft(choose(pieceOptions), piecePool);
-				}
+				layer.spawnPieceLeft(piecePool);
 			}
 		}
 	};
@@ -171,18 +161,9 @@ exports = Class(function() {
 		}
 
 		if (layer.xCanSpawn) {
-			// spawn to the left if necessary
-			var pieceOptions = layer.pieceOptions;
+			// spawn pieces about to appear on the right
 			while (layer.xSpawnMax < -x + rvs.width) {
-				if (layer.ordered) {
-					var index = layer.pieceIndex++;
-					if (layer.pieceIndex === pieceOptions.length) {
-						layer.pieceIndex = 0;
-					}
-					layer.spawnPieceRight(pieceOptions[index], piecePool);
-				} else {
-					layer.spawnPieceRight(choose(pieceOptions), piecePool);
-				}
+				layer.spawnPieceRight(piecePool);
 			}
 		}
 	};
@@ -197,7 +178,7 @@ exports = Class(function() {
 		var rvs = this.rootView.style;
 
 		if (layer.yCanRelease) {
-			// release pieces that have been pushed too far right
+			// release pieces that have been pushed too far down
 			var pieces = layer.pieces;
 			var finished = false;
 			while (pieces.length && !finished) {
@@ -212,18 +193,9 @@ exports = Class(function() {
 		}
 
 		if (layer.yCanSpawn) {
-			// spawn to the left if necessary
-			var pieceOptions = layer.pieceOptions;
+			// spawn pieces about to appear on the top
 			while (layer.ySpawnMin > -y) {
-				if (layer.ordered) {
-					var index = layer.pieceIndex++;
-					if (layer.pieceIndex === pieceOptions.length) {
-						layer.pieceIndex = 0;
-					}
-					layer.spawnPieceUp(pieceOptions[index], piecePool);
-				} else {
-					layer.spawnPieceUp(choose(pieceOptions), piecePool);
-				}
+				layer.spawnPieceUp(piecePool);
 			}
 		}
 	};
@@ -238,7 +210,7 @@ exports = Class(function() {
 		var rvs = this.rootView.style;
 
 		if (layer.yCanRelease) {
-			// release pieces that have been pushed too far left
+			// release pieces that have been pushed too far up
 			var pieces = layer.pieces;
 			var finished = false;
 			while (pieces.length && !finished) {
@@ -253,18 +225,9 @@ exports = Class(function() {
 		}
 
 		if (layer.yCanSpawn) {
-			// spawn to the left if necessary
-			var pieceOptions = layer.pieceOptions;
+			// spawn pieces about to appear on the bottom
 			while (layer.ySpawnMax < -y + rvs.height) {
-				if (layer.ordered) {
-					var index = layer.pieceIndex++;
-					if (layer.pieceIndex === pieceOptions.length) {
-						layer.pieceIndex = 0;
-					}
-					layer.spawnPieceDown(pieceOptions[index], piecePool);
-				} else {
-					layer.spawnPieceDown(choose(pieceOptions), piecePool);
-				}
+				layer.spawnPieceDown(piecePool);
 			}
 		}
 	};
@@ -296,7 +259,6 @@ var LayerView = exports.LayerView = Class(View, function() {
 		this.index = 0;
 		this.preventTearing = false;
 		this.ordered = false;
-		this.pieceIndex = 0;
 		this.pieceOptions = [];
 		this.pieces = [];
 	};
@@ -327,7 +289,6 @@ var LayerView = exports.LayerView = Class(View, function() {
 		this.index = index;
 		this.preventTearing = config.preventTearing || false;
 		this.ordered = config.ordered || false;
-		this.pieceIndex = 0;
 		this.pieceOptions = config.pieceOptions;
 		this.pieces = [];
 
@@ -373,60 +334,90 @@ var LayerView = exports.LayerView = Class(View, function() {
 		pieceData.yAlign = data.yAlign || "top";
 	};
 
-	this.spawnPieceLeft = function(data, pool) {
+	this.spawnPieceLeft = function(pool) {
+		var index = this.getNextPieceIndex(-1);
+		var data = this.pieceOptions[index];
 		var piece = this.addPiece(data, pool);
 		var pieceData = pieceCache[data.id];
-		// update misc. style properties
+		piece.index = index;
 		piece.style.x = this.xSpawnMin + pieceData.x - pieceData.width;
 		piece.style.y = this.ySpawnMin + pieceData.y;
 		this.applyStyleRanges(piece, pieceData);
 		this.alignY(piece, pieceData);
+		this.pieces.unshift(piece);
 		// next spawn with a one pixel overlap to avoid layer tears?
 		var tearOffset = this.preventTearing ? 1 : 0;
 		var gap = rollInt(this.xGapRange.min, this.xGapRange.max);
 		this.xSpawnMin = piece.style.x + tearOffset - gap;
 	};
 
-	this.spawnPieceRight = function(data, pool) {
+	this.spawnPieceRight = function(pool) {
+		var index = this.getNextPieceIndex(1);
+		var data = this.pieceOptions[index];
 		var piece = this.addPiece(data, pool);
 		var pieceData = pieceCache[data.id];
-		// update misc. style properties
+		piece.index = index;
 		piece.style.x = this.xSpawnMax + pieceData.x;
 		piece.style.y = this.ySpawnMin + pieceData.y;
 		this.applyStyleRanges(piece, pieceData);
 		this.alignY(piece, pieceData);
+		this.pieces.push(piece);
 		// next spawn with a one pixel overlap to avoid layer tears?
 		var tearOffset = this.preventTearing ? 1 : 0;
 		var gap = rollInt(this.xGapRange.min, this.xGapRange.max);
 		this.xSpawnMax = piece.style.x + piece.style.width - tearOffset + gap;
 	};
 
-	this.spawnPieceUp = function(data, pool) {
+	this.spawnPieceUp = function(pool) {
+		var index = this.getNextPieceIndex(-1);
+		var data = this.pieceOptions[index];
 		var piece = this.addPiece(data, pool);
 		var pieceData = pieceCache[data.id];
-		// update misc. style properties
+		piece.index = index;
 		piece.style.x = this.xSpawnMin + pieceData.x;
 		piece.style.y = this.ySpawnMin + pieceData.y - pieceData.height;
 		this.applyStyleRanges(piece, pieceData);
 		this.alignX(piece, pieceData);
+		this.pieces.unshift(piece);
 		// next spawn with a one pixel overlap to avoid layer tears?
 		var tearOffset = this.preventTearing ? 1 : 0;
 		var gap = rollInt(this.yGapRange.min, this.yGapRange.max);
 		this.ySpawnMin = piece.style.y + tearOffset - gap;
 	};
 
-	this.spawnPieceDown = function(data, pool) {
+	this.spawnPieceDown = function(pool) {
+		var index = this.getNextPieceIndex(1);
+		var data = this.pieceOptions[index];
 		var piece = this.addPiece(data, pool);
 		var pieceData = pieceCache[data.id];
-		// update misc. style properties
+		piece.index = index;
 		piece.style.x = this.xSpawnMin + pieceData.x;
 		piece.style.y = this.ySpawnMax + pieceData.y;
 		this.applyStyleRanges(piece, pieceData);
 		this.alignX(piece, pieceData);
+		this.pieces.push(piece);
 		// next spawn with a one pixel overlap to avoid layer tears?
 		var tearOffset = this.preventTearing ? 1 : 0;
 		var gap = rollInt(this.yGapRange.min, this.yGapRange.max);
 		this.ySpawnMax = piece.style.y + piece.style.height - tearOffset + gap;
+	};
+
+	this.getNextPieceIndex = function(deltaIndex) {
+		var pieces = this.pieces;
+		var options = this.pieceOptions;
+		var maxIndex = options.length - 1;
+		if (this.ordered) {
+			var lastPiece = pieces[deltaIndex > 0 ? pieces.length - 1 : 0];
+			var index = ((lastPiece && lastPiece.index) + deltaIndex) || 0;
+			if (index < 0) {
+				index = maxIndex;
+			} else if (index > maxIndex) {
+				index = 0;
+			}
+			return index;
+		} else {
+			return rollInt(0, maxIndex);
+		}
 	};
 
 	this.addPiece = function(data, pool) {
@@ -439,7 +430,6 @@ var LayerView = exports.LayerView = Class(View, function() {
 			piece.currImage = pieceData.img;
 			piece.setImage(pieceData.img);
 		}
-		this.pieces.push(piece);
 		return piece;
 	};
 

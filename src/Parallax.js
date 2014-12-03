@@ -239,14 +239,14 @@ var LayerView = exports.LayerView = Class(View, function() {
 		this.xMultiplier = 1;
 		this.xCanSpawn = true;
 		this.xCanRelease = true;
-		this.xGapRange = { min: 0, max: 0 };
+		this.xGapRange = [0, 0];
 		// vertical properties
 		this.ySpawnMin = 0;
 		this.ySpawnMax = 0;
 		this.yMultiplier = 1;
 		this.yCanSpawn = true;
 		this.yCanRelease = true;
-		this.yGapRange = { min: 0, max: 0 };
+		this.yGapRange = [0, 0];
 		// misc. layer and piece spawning properties
 		this.index = 0;
 		this.ordered = false;
@@ -263,7 +263,7 @@ var LayerView = exports.LayerView = Class(View, function() {
 		this.xSpawnMin = 0;
 		this.xSpawnMax = 0;
 		this.xMultiplier = config.xMultiplier || 0;
-		this.xGapRange = config.xGapRange || { min: 0, max: 0 };
+		this.xGapRange = config.xGapRange || [0, 0];
 		this.xCanSpawn = config.xCanSpawn !== void 0
 			? config.xCanSpawn
 			: true;
@@ -274,7 +274,7 @@ var LayerView = exports.LayerView = Class(View, function() {
 		this.ySpawnMin = 0;
 		this.ySpawnMax = 0;
 		this.yMultiplier = config.yMultiplier || 0;
-		this.yGapRange = config.yGapRange || { min: 0, max: 0 };
+		this.yGapRange = config.yGapRange || [0, 0];
 		this.yCanSpawn = config.yCanSpawn !== void 0
 			? config.yCanSpawn
 			: true;
@@ -308,8 +308,8 @@ var LayerView = exports.LayerView = Class(View, function() {
 	this.cachePieceData = function(data) {
 		var pieceData = pieceCache[data.id] = {};
 		pieceData.img = new Image({ url: data.image });
-		pieceData.x = data.x || 0;
-		pieceData.y = data.y || 0;
+		pieceData.x = data.x;
+		pieceData.y = data.y;
 		pieceData.zIndex = data.zIndex || 0;
 		pieceData.r = data.r || 0;
 		var b = pieceData.img.getBounds();
@@ -334,14 +334,18 @@ var LayerView = exports.LayerView = Class(View, function() {
 		var data = this.pieceOptions[index];
 		var piece = this.addPiece(data);
 		var pieceData = pieceCache[data.id];
+		var x = pieceData.x || 0;
+		var y = pieceData.y !== void 0
+			? pieceData.y
+			: rollInt(this.ySpawnMin, this.ySpawnMax);
 		piece.index = index;
-		piece.style.x = this.xSpawnMin + pieceData.x - pieceData.width;
-		piece.style.y = this.ySpawnMin + pieceData.y;
+		piece.style.x = this.xSpawnMin + x - pieceData.width;
+		piece.style.y = y;
 		this.applyStyleRanges(piece, pieceData);
 		this.alignY(piece, pieceData);
 		this.pieces.unshift(piece);
-		var gap = rollInt(this.xGapRange.min, this.xGapRange.max);
-		this.xSpawnMin = piece.style.x - gap;
+		this.xSpawnMin = piece.style.x - this.getGapX();
+		this.yCanSpawn && this.updateSpawnY(piece);
 	};
 
 	this.spawnPieceRight = function() {
@@ -349,14 +353,18 @@ var LayerView = exports.LayerView = Class(View, function() {
 		var data = this.pieceOptions[index];
 		var piece = this.addPiece(data);
 		var pieceData = pieceCache[data.id];
+		var x = pieceData.x || 0;
+		var y = pieceData.y !== void 0
+			? pieceData.y
+			: rollInt(this.ySpawnMin, this.ySpawnMax);
 		piece.index = index;
-		piece.style.x = this.xSpawnMax + pieceData.x;
-		piece.style.y = this.ySpawnMin + pieceData.y;
+		piece.style.x = this.xSpawnMax + x;
+		piece.style.y = y;
 		this.applyStyleRanges(piece, pieceData);
 		this.alignY(piece, pieceData);
 		this.pieces.push(piece);
-		var gap = rollInt(this.xGapRange.min, this.xGapRange.max);
-		this.xSpawnMax = piece.style.x + piece.style.width + gap;
+		this.xSpawnMax = piece.style.x + piece.style.width + this.getGapX();
+		this.yCanSpawn && this.updateSpawnY(piece);
 	};
 
 	this.spawnPieceUp = function() {
@@ -364,14 +372,18 @@ var LayerView = exports.LayerView = Class(View, function() {
 		var data = this.pieceOptions[index];
 		var piece = this.addPiece(data);
 		var pieceData = pieceCache[data.id];
+		var x = pieceData.x !== void 0
+			? pieceData.x
+			: rollInt(this.xSpawnMin, this.xSpawnMax);
+		var y = pieceData.y || 0;
 		piece.index = index;
-		piece.style.x = this.xSpawnMin + pieceData.x;
-		piece.style.y = this.ySpawnMin + pieceData.y - pieceData.height;
+		piece.style.x = x;
+		piece.style.y = this.ySpawnMin + y - pieceData.height;
 		this.applyStyleRanges(piece, pieceData);
 		this.alignX(piece, pieceData);
 		this.pieces.unshift(piece);
-		var gap = rollInt(this.yGapRange.min, this.yGapRange.max);
-		this.ySpawnMin = piece.style.y - gap;
+		this.ySpawnMin = piece.style.y - this.getGapY();
+		this.xCanSpawn && this.updateSpawnX(piece);
 	};
 
 	this.spawnPieceDown = function() {
@@ -379,14 +391,18 @@ var LayerView = exports.LayerView = Class(View, function() {
 		var data = this.pieceOptions[index];
 		var piece = this.addPiece(data);
 		var pieceData = pieceCache[data.id];
+		var x = pieceData.x !== void 0
+			? pieceData.x
+			: rollInt(this.xSpawnMin, this.xSpawnMax);
+		var y = pieceData.y || 0;
 		piece.index = index;
-		piece.style.x = this.xSpawnMin + pieceData.x;
-		piece.style.y = this.ySpawnMax + pieceData.y;
+		piece.style.x = x;
+		piece.style.y = this.ySpawnMax + y;
 		this.applyStyleRanges(piece, pieceData);
 		this.alignX(piece, pieceData);
 		this.pieces.push(piece);
-		var gap = rollInt(this.yGapRange.min, this.yGapRange.max);
-		this.ySpawnMax = piece.style.y + piece.style.height + gap;
+		this.ySpawnMax = piece.style.y + piece.style.height + this.getGapY();
+		this.xCanSpawn && this.updateSpawnX(piece);
 	};
 
 	this.getNextPieceIndex = function(deltaIndex) {
@@ -442,5 +458,33 @@ var LayerView = exports.LayerView = Class(View, function() {
 		} else if (pieceData.yAlign === "bottom") {
 			piece.style.y -= piece.style.height;
 		}
+	};
+
+	this.updateSpawnX = function(piece) {
+		var ps = piece.style;
+		if (ps.x <= this.xSpawnMin) {
+			this.xSpawnMin = ps.x - this.getGapX();
+		}
+		if (ps.x + ps.width >= this.xSpawnMax) {
+			this.xSpawnMax = ps.x + ps.width + this.getGapX();
+		}
+	};
+
+	this.updateSpawnY = function(piece) {
+		var ps = piece.style;
+		if (ps.y <= this.ySpawnMin) {
+			this.ySpawnMin = ps.y - this.getGapY();
+		}
+		if (ps.y + ps.height >= this.ySpawnMax) {
+			this.ySpawnMax = ps.y + ps.height + this.getGapY();
+		}
+	};
+
+	this.getGapX = function() {
+		return rollInt(this.xGapRange[0], this.xGapRange[1]);
+	};
+
+	this.getGapY = function() {
+		return rollInt(this.yGapRange[0], this.yGapRange[1])
 	};
 });

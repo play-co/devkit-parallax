@@ -249,7 +249,6 @@ var LayerView = exports.LayerView = Class(View, function() {
 		this.yGapRange = { min: 0, max: 0 };
 		// misc. layer and piece spawning properties
 		this.index = 0;
-		this.preventTearing = false;
 		this.ordered = false;
 		this.pieceOptions = [];
 		this.pieces = [];
@@ -284,7 +283,6 @@ var LayerView = exports.LayerView = Class(View, function() {
 			: this.yCanSpawn;
 
 		this.index = index;
-		this.preventTearing = config.preventTearing || false;
 		this.ordered = config.ordered || false;
 		this.pieceOptions = config.pieceOptions;
 		this.pieces = [];
@@ -342,10 +340,8 @@ var LayerView = exports.LayerView = Class(View, function() {
 		this.applyStyleRanges(piece, pieceData);
 		this.alignY(piece, pieceData);
 		this.pieces.unshift(piece);
-		// next spawn with a one pixel overlap to avoid layer tears?
-		var tearOffset = this.preventTearing ? 1 : 0;
 		var gap = rollInt(this.xGapRange.min, this.xGapRange.max);
-		this.xSpawnMin = piece.style.x + tearOffset - gap;
+		this.xSpawnMin = piece.style.x - gap;
 	};
 
 	this.spawnPieceRight = function() {
@@ -359,10 +355,8 @@ var LayerView = exports.LayerView = Class(View, function() {
 		this.applyStyleRanges(piece, pieceData);
 		this.alignY(piece, pieceData);
 		this.pieces.push(piece);
-		// next spawn with a one pixel overlap to avoid layer tears?
-		var tearOffset = this.preventTearing ? 1 : 0;
 		var gap = rollInt(this.xGapRange.min, this.xGapRange.max);
-		this.xSpawnMax = piece.style.x + piece.style.width - tearOffset + gap;
+		this.xSpawnMax = piece.style.x + piece.style.width + gap;
 	};
 
 	this.spawnPieceUp = function() {
@@ -376,10 +370,8 @@ var LayerView = exports.LayerView = Class(View, function() {
 		this.applyStyleRanges(piece, pieceData);
 		this.alignX(piece, pieceData);
 		this.pieces.unshift(piece);
-		// next spawn with a one pixel overlap to avoid layer tears?
-		var tearOffset = this.preventTearing ? 1 : 0;
 		var gap = rollInt(this.yGapRange.min, this.yGapRange.max);
-		this.ySpawnMin = piece.style.y + tearOffset - gap;
+		this.ySpawnMin = piece.style.y - gap;
 	};
 
 	this.spawnPieceDown = function() {
@@ -393,10 +385,8 @@ var LayerView = exports.LayerView = Class(View, function() {
 		this.applyStyleRanges(piece, pieceData);
 		this.alignX(piece, pieceData);
 		this.pieces.push(piece);
-		// next spawn with a one pixel overlap to avoid layer tears?
-		var tearOffset = this.preventTearing ? 1 : 0;
 		var gap = rollInt(this.yGapRange.min, this.yGapRange.max);
-		this.ySpawnMax = piece.style.y + piece.style.height - tearOffset + gap;
+		this.ySpawnMax = piece.style.y + piece.style.height + gap;
 	};
 
 	this.getNextPieceIndex = function(deltaIndex) {

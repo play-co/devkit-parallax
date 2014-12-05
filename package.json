@@ -2,7 +2,7 @@
   "name": "devkit-parallax",
   "author": "Game Closure",
   "description": "A pre-built parallax system with powerful configuration.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/gameclosure/devkit-parallax.git"

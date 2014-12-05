@@ -324,9 +324,15 @@ var LayerView = exports.LayerView = Class(View, function() {
 		pieceData.flipX = data.flipX || false;
 		pieceData.flipY = data.flipY || false;
 		pieceData.compositeOperation = data.compositeOperation || "";
-		pieceData.styleRanges = data.styleRanges || [];
 		pieceData.xAlign = data.xAlign || "left";
 		pieceData.yAlign = data.yAlign || "top";
+		// parse styleRanges into an array of arrays
+		pieceData.styleRanges = [];
+		var ranges = data.styleRanges || {};
+		for (var key in ranges) {
+			var range = ranges[key];
+			pieceData.styleRanges.push([key, range[0], range[1]]);
+		}
 	};
 
 	this.spawnPieceLeft = function() {

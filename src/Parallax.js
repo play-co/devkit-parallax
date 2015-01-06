@@ -262,7 +262,9 @@ var LayerView = exports.LayerView = Class(View, function() {
 	this.reset = function(config, index) {
 		this.xSpawnMin = 0;
 		this.xSpawnMax = 0;
-		this.xMultiplier = config.xMultiplier || 0;
+		this.xMultiplier = config.xMultiplier !== void 0
+			? config.xMultiplier
+			: 1;
 		this.xGapRange = config.xGapRange || [0, 0];
 		this.xCanSpawn = config.xCanSpawn !== void 0
 			? config.xCanSpawn
@@ -273,7 +275,9 @@ var LayerView = exports.LayerView = Class(View, function() {
 
 		this.ySpawnMin = 0;
 		this.ySpawnMax = 0;
-		this.yMultiplier = config.yMultiplier || 0;
+		this.yMultiplier = config.yMultiplier !== void 0
+			? config.yMultiplier
+			: 1;
 		this.yGapRange = config.yGapRange || [0, 0];
 		this.yCanSpawn = config.yCanSpawn !== void 0
 			? config.yCanSpawn
@@ -292,7 +296,7 @@ var LayerView = exports.LayerView = Class(View, function() {
 		s.y = config.y || 0;
 		s.width = config.width || 1;
 		s.height = config.height || 1;
-		s.zIndex = config.zIndex || 1;
+		s.zIndex = config.zIndex || 0;
 
 		// process layer image data
 		var pieceOptions = config.pieceOptions;

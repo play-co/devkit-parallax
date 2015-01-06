@@ -81,7 +81,7 @@ Each parallax piece (in the `pieceOptions` array) within a layer can have its ow
  * `yAlign` - type: `string` - one of [`top`, `center`, `bottom`], vertical alignment of the piece with respect to its spawn position; defaults to `top`
  * `styleRanges` - type: `object` - any of the numerical `style` properties listed above can be added as properties of this object, and should have array values in the format `[min, max]` to specify a valid range to be generated randomly per piece spawn
 
- That's a lot of config to comprehend, so here's an example of what working config might look like:
+That's a lot of config to comprehend, so here's an example of what working config might look like:
 
  ```
  [

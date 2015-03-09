@@ -260,8 +260,6 @@ var LayerView = exports.LayerView = Class(View, function() {
 	};
 
 	this.reset = function(config, index) {
-		this.xSpawnMin = 0;
-		this.xSpawnMax = 0;
 		this.xMultiplier = config.xMultiplier !== void 0
 			? config.xMultiplier
 			: 1;
@@ -272,9 +270,9 @@ var LayerView = exports.LayerView = Class(View, function() {
 		this.xCanRelease = config.xCanRelease !== void 0
 			? config.xCanRelease
 			: this.xCanSpawn;
+		this.xSpawnMin = 0;
+		this.xSpawnMax = this.getGapX();
 
-		this.ySpawnMin = 0;
-		this.ySpawnMax = 0;
 		this.yMultiplier = config.yMultiplier !== void 0
 			? config.yMultiplier
 			: 1;
@@ -285,6 +283,8 @@ var LayerView = exports.LayerView = Class(View, function() {
 		this.yCanRelease = config.yCanRelease !== void 0
 			? config.yCanRelease
 			: this.yCanSpawn;
+		this.ySpawnMin = 0;
+		this.ySpawnMax = this.getGapY();
 
 		this.index = index;
 		this.ordered = config.ordered || false;

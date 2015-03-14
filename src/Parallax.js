@@ -122,8 +122,9 @@ exports = Class(function() {
 
 		if (layer.xCanSpawn) {
 			// spawn pieces about to appear on the left
-			while (layer.xSpawnMin > -x) {
-				layer.spawnPieceLeft();
+			var valid = true;
+			while (valid && layer.xSpawnMin > -x) {
+				valid = layer.spawnPieceLeft();
 			}
 		}
 	};
@@ -154,8 +155,9 @@ exports = Class(function() {
 
 		if (layer.xCanSpawn) {
 			// spawn pieces about to appear on the right
-			while (layer.xSpawnMax < -x + rvs.width) {
-				layer.spawnPieceRight();
+			var valid = true;
+			while (valid && layer.xSpawnMax < -x + rvs.width) {
+				valid = layer.spawnPieceRight();
 			}
 		}
 	};
@@ -186,8 +188,9 @@ exports = Class(function() {
 
 		if (layer.yCanSpawn) {
 			// spawn pieces about to appear on the top
-			while (layer.ySpawnMin > -y) {
-				layer.spawnPieceUp();
+			var valid = true;
+			while (valid && layer.ySpawnMin > -y) {
+				valid = layer.spawnPieceUp();
 			}
 		}
 	};
@@ -218,8 +221,9 @@ exports = Class(function() {
 
 		if (layer.yCanSpawn) {
 			// spawn pieces about to appear on the bottom
-			while (layer.ySpawnMax < -y + rvs.height) {
-				layer.spawnPieceDown();
+			var valid = true;
+			while (valid && layer.ySpawnMax < -y + rvs.height) {
+				valid = layer.spawnPieceDown();
 			}
 		}
 	};
@@ -353,77 +357,97 @@ var LayerView = exports.LayerView = Class(View, function() {
 	this.spawnPieceLeft = function() {
 		var index = this.getNextPieceIndex(-1);
 		var data = this.pieceOptions[index];
-		var piece = this.addPiece(data);
 		var pieceData = pieceCache[data.id];
-		var x = pieceData.x || 0;
-		var y = pieceData.y !== void 0
-			? pieceData.y
-			: rollInt(this.ySpawnMin, this.ySpawnMax);
-		piece.index = index;
-		piece.style.x = this.xSpawnMin + x - pieceData.width;
-		piece.style.y = y;
-		this.applyStyleRanges(piece, pieceData);
-		this.alignPieceY(piece, pieceData);
-		this.pieces.unshift(piece);
-		this.updateSpawnX(piece);
-		this.yCanSpawn && this.updateSpawnY(piece);
+		if (pieceData) {
+			var piece = this.addPiece(data);
+			var x = pieceData.x || 0;
+			var y = pieceData.y !== void 0
+				? pieceData.y
+				: rollInt(this.ySpawnMin, this.ySpawnMax);
+			piece.index = index;
+			piece.style.x = this.xSpawnMin + x - pieceData.width;
+			piece.style.y = y;
+			this.applyStyleRanges(piece, pieceData);
+			this.alignPieceY(piece, pieceData);
+			this.pieces.unshift(piece);
+			this.updateSpawnX(piece);
+			this.yCanSpawn && this.updateSpawnY(piece);
+			return true;
+		} else {
+			return false;
+		}
 	};
 
 	this.spawnPieceRight = function() {
 		var index = this.getNextPieceIndex(1);
 		var data = this.pieceOptions[index];
-		var piece = this.addPiece(data);
 		var pieceData = pieceCache[data.id];
-		var x = pieceData.x || 0;
-		var y = pieceData.y !== void 0
-			? pieceData.y
-			: rollInt(this.ySpawnMin, this.ySpawnMax);
-		piece.index = index;
-		piece.style.x = this.xSpawnMax + x;
-		piece.style.y = y;
-		this.applyStyleRanges(piece, pieceData);
-		this.alignPieceY(piece, pieceData);
-		this.pieces.push(piece);
-		this.updateSpawnX(piece);
-		this.yCanSpawn && this.updateSpawnY(piece);
+		if (pieceData) {
+			var piece = this.addPiece(data);
+			var x = pieceData.x || 0;
+			var y = pieceData.y !== void 0
+				? pieceData.y
+				: rollInt(this.ySpawnMin, this.ySpawnMax);
+			piece.index = index;
+			piece.style.x = this.xSpawnMax + x;
+			piece.style.y = y;
+			this.applyStyleRanges(piece, pieceData);
+			this.alignPieceY(piece, pieceData);
+			this.pieces.push(piece);
+			this.updateSpawnX(piece);
+			this.yCanSpawn && this.updateSpawnY(piece);
+			return true;
+		} else {
+			return false;
+		}
 	};
 
 	this.spawnPieceUp = function() {
 		var index = this.getNextPieceIndex(-1);
 		var data = this.pieceOptions[index];
-		var piece = this.addPiece(data);
 		var pieceData = pieceCache[data.id];
-		var x = pieceData.x !== void 0
-			? pieceData.x
-			: rollInt(this.xSpawnMin, this.xSpawnMax);
-		var y = pieceData.y || 0;
-		piece.index = index;
-		piece.style.x = x;
-		piece.style.y = this.ySpawnMin + y - pieceData.height;
-		this.applyStyleRanges(piece, pieceData);
-		this.alignPieceX(piece, pieceData);
-		this.pieces.unshift(piece);
-		this.updateSpawnY(piece);
-		this.xCanSpawn && this.updateSpawnX(piece);
+		if (pieceData) {
+			var piece = this.addPiece(data);
+			var x = pieceData.x !== void 0
+				? pieceData.x
+				: rollInt(this.xSpawnMin, this.xSpawnMax);
+			var y = pieceData.y || 0;
+			piece.index = index;
+			piece.style.x = x;
+			piece.style.y = this.ySpawnMin + y - pieceData.height;
+			this.applyStyleRanges(piece, pieceData);
+			this.alignPieceX(piece, pieceData);
+			this.pieces.unshift(piece);
+			this.updateSpawnY(piece);
+			this.xCanSpawn && this.updateSpawnX(piece);
+			return true;
+		} else {
+			return false;
+		}
 	};
 
 	this.spawnPieceDown = function() {
 		var index = this.getNextPieceIndex(1);
 		var data = this.pieceOptions[index];
-		var piece = this.addPiece(data);
 		var pieceData = pieceCache[data.id];
-		var x = pieceData.x !== void 0
-			? pieceData.x
-			: rollInt(this.xSpawnMin, this.xSpawnMax);
-		var y = pieceData.y || 0;
-		piece.index = index;
-		piece.style.x = x;
-		piece.style.y = this.ySpawnMax + y;
-		this.applyStyleRanges(piece, pieceData);
-		this.alignPieceX(piece, pieceData);
-		this.pieces.push(piece);
-		this.updateSpawnY(piece);
-		this.xCanSpawn && this.updateSpawnX(piece);
+		if (pieceData) {
+			var piece = this.addPiece(data);
+			var x = pieceData.x !== void 0
+				? pieceData.x
+				: rollInt(this.xSpawnMin, this.xSpawnMax);
+			var y = pieceData.y || 0;
+			piece.index = index;
+			piece.style.x = x;
+			piece.style.y = this.ySpawnMax + y;
+			this.applyStyleRanges(piece, pieceData);
+			this.alignPieceX(piece, pieceData);
+			this.pieces.push(piece);
+			this.updateSpawnY(piece);
+			this.xCanSpawn && this.updateSpawnX(piece);
+			return true;
+		} else {
+			return false;
+		}
 	};
 
 	this.getNextPieceIndex = function(deltaIndex) {

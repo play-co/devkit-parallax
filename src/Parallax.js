@@ -310,12 +310,15 @@ var LayerView = exports.LayerView = Class(View, function() {
 	};
 
 	this.cachePieceData = function(data) {
-		var pieceData = pieceCache[data.id] = {};
+		var pieceData = {};
 		pieceData.img = new Image({ url: data.image });
+
+		// x and y undefined by default for random spawn positions
 		pieceData.x = data.x;
 		pieceData.y = data.y;
 		pieceData.zIndex = data.zIndex || 0;
 		pieceData.r = data.r || 0;
+
 		var b = pieceData.img.getBounds();
 		pieceData.width = data.width || b.width + b.marginLeft + b.marginRight;
 		pieceData.height = data.height || b.height + b.marginTop + b.marginBottom;
@@ -330,12 +333,20 @@ var LayerView = exports.LayerView = Class(View, function() {
 		pieceData.compositeOperation = data.compositeOperation || "";
 		pieceData.xAlign = data.xAlign || "left";
 		pieceData.yAlign = data.yAlign || "top";
+
 		// parse styleRanges into an array of arrays
 		pieceData.styleRanges = [];
 		var ranges = data.styleRanges || {};
 		for (var key in ranges) {
 			var range = ranges[key];
 			pieceData.styleRanges.push([key, range[0], range[1]]);
+		}
+
+		// save the data to our cache only if valid
+		if (pieceData.width > 0 && pieceData.height > 0) {
+			pieceCache[data.id] = pieceData;
+		} else {
+			logger.error("Parallax - found an invalid image:", data.image);
 		}
 	};
 

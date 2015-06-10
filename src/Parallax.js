@@ -33,6 +33,7 @@ exports = Class(function() {
 		});
 		// save opts for later
 		this._opts = opts;
+		this.layerMap = {};
 	};
 
 	/**
@@ -48,6 +49,7 @@ exports = Class(function() {
 	 * releaseLayers: release all parallax views to their respective pools
 	 */
 	this.releaseLayers = function() {
+		this.layerMap = {};
 		this.layerPool.forEachActiveView(function(layer, i) {
 			layer.pieces.length = 0;
 			layer.removeFromSuperview();
@@ -68,7 +70,12 @@ exports = Class(function() {
 			// populate initial layers to fill the screen
 			this.moveLayerLeft(layer, 0);
 			this.moveLayerUp(layer, 0);
+			this.layerMap[layer.id] = layer;
 		}
+	};
+
+	this.getLayerById = function(id) {
+		return this.layerMap[id];
 	};
 
 	/**
@@ -253,6 +260,7 @@ var LayerView = exports.LayerView = Class(View, function() {
 		this.yGapRange = [0, 0];
 		// misc. layer and piece spawning properties
 		this.index = 0;
+		this._uid = "";
 		this.ordered = false;
 		this.pieceOptions = [];
 		this.pieces = [];
@@ -291,6 +299,7 @@ var LayerView = exports.LayerView = Class(View, function() {
 		this.ySpawnMax = this.ySpawnMin + this.getGapY();
 
 		this.index = index;
+		this.id = (config.id !== undefined) ? config.id : ("" + _uid++);
 		this.ordered = config.ordered || false;
 		this.pieceOptions = config.pieceOptions;
 		this.pieces = [];

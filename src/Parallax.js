@@ -394,8 +394,10 @@ var LayerView = exports.LayerView = Class(View, function() {
 				? pieceData.y
 				: rollInt(this.ySpawnMin, this.ySpawnMax);
 			var ps = piece.style;
-			var xCorrection = (1 - (ps.scale * ps.scaleX)) * ps.anchorX;
-			var yCorrection = (1 - (ps.scale * ps.scaleY)) * ps.anchorY;
+			var sx = ps.scale * ps.scaleX;
+			var sy = ps.scale * ps.scaleY;
+			var xCorrection = (1 - sx) * ps.anchorX;
+			var yCorrection = (1 - sy) * ps.anchorY;
 			piece.index = index;
 			ps.x = this.xSpawnMax + x - xCorrection;
 			ps.y = y - yCorrection;
@@ -450,8 +452,10 @@ var LayerView = exports.LayerView = Class(View, function() {
 				: rollInt(this.xSpawnMin, this.xSpawnMax);
 			var y = pieceData.y || 0;
 			var ps = piece.style;
-			var xCorrection = (1 - (ps.scale * ps.scaleX)) * ps.anchorX;
-			var yCorrection = (1 - (ps.scale * ps.scaleY)) * ps.anchorY;
+			var sx = ps.scale * ps.scaleX;
+			var sy = ps.scale * ps.scaleY;
+			var xCorrection = (1 - sx) * ps.anchorX;
+			var yCorrection = (1 - sy) * ps.anchorY;
 			piece.index = index;
 			ps.x = x - xCorrection;
 			ps.y = this.ySpawnMax + y - yCorrection;

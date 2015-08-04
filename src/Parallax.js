@@ -111,10 +111,17 @@ exports = Class(function() {
 	this.moveLayerRight = function(layer, dx) {
 		var x = layer.style.x += dx;
 		var rvs = this.rootView.style;
+		var pieces = layer.pieces;
 
+		// stop the layer if bounded by finite spawned pieces
+		if (layer.spawnBounded && pieces.length && layer.spawnCount === 0) {
+			if (layer.xSpawnMin > -x) {
+				x = layer.style.x -= layer.xSpawnMin + x;
+			}
+		}
+
+		// release pieces that have been pushed too far right
 		if (layer.xCanRelease) {
-			// release pieces that have been pushed too far right
-			var pieces = layer.pieces;
 			var finished = false;
 			while (pieces.length && !finished) {
 				var px = layer.getMinPieceX(pieces[pieces.length - 1]);
@@ -127,8 +134,8 @@ exports = Class(function() {
 			}
 		}
 
+		// spawn pieces about to appear on the left
 		if (layer.xCanSpawn) {
-			// spawn pieces about to appear on the left
 			var valid = true;
 			while (valid && layer.xSpawnMin > -x) {
 				valid = layer.spawnPieceLeft();
@@ -144,10 +151,17 @@ exports = Class(function() {
 	this.moveLayerLeft = function(layer, dx) {
 		var x = layer.style.x += dx;
 		var rvs = this.rootView.style;
+		var pieces = layer.pieces;
 
+		// stop the layer if bounded by finite spawned pieces
+		if (layer.spawnBounded && pieces.length && layer.spawnCount === 0) {
+			if (layer.xSpawnMax < -x + rvs.width) {
+				x = layer.style.x += -x + rvs.width - layer.xSpawnMax;
+			}
+		}
+
+		// release pieces that have been pushed too far left
 		if (layer.xCanRelease) {
-			// release pieces that have been pushed too far left
-			var pieces = layer.pieces;
 			var finished = false;
 			while (pieces.length && !finished) {
 				var px = layer.getMaxPieceX(pieces[0]);
@@ -160,8 +174,8 @@ exports = Class(function() {
 			}
 		}
 
+		// spawn pieces about to appear on the right
 		if (layer.xCanSpawn) {
-			// spawn pieces about to appear on the right
 			var valid = true;
 			while (valid && layer.xSpawnMax < -x + rvs.width) {
 				valid = layer.spawnPieceRight();
@@ -177,10 +191,17 @@ exports = Class(function() {
 	this.moveLayerDown = function(layer, dy) {
 		var y = layer.style.y += dy;
 		var rvs = this.rootView.style;
+		var pieces = layer.pieces;
 
+		// stop the layer if bounded by finite spawned pieces
+		if (layer.spawnBounded && pieces.length && layer.spawnCount === 0) {
+			if (layer.ySpawnMin > -y) {
+				y = layer.style.y -= layer.ySpawnMin + y;
+			}
+		}
+
+		// release pieces that have been pushed too far down
 		if (layer.yCanRelease) {
-			// release pieces that have been pushed too far down
-			var pieces = layer.pieces;
 			var finished = false;
 			while (pieces.length && !finished) {
 				var py = layer.getMinPieceY(pieces[pieces.length - 1]);
@@ -193,8 +214,8 @@ exports = Class(function() {
 			}
 		}
 
+		// spawn pieces about to appear on the top
 		if (layer.yCanSpawn) {
-			// spawn pieces about to appear on the top
 			var valid = true;
 			while (valid && layer.ySpawnMin > -y) {
 				valid = layer.spawnPieceUp();
@@ -210,10 +231,17 @@ exports = Class(function() {
 	this.moveLayerUp = function(layer, dy) {
 		var y = layer.style.y += dy;
 		var rvs = this.rootView.style;
+		var pieces = layer.pieces;
 
+		// stop the layer if bounded by finite spawned pieces
+		if (layer.spawnBounded && pieces.length && layer.spawnCount === 0) {
+			if (layer.ySpawnMax < -y + rvs.height) {
+				y = layer.style.y += -y + rvs.height - layer.ySpawnMax;
+			}
+		}
+
+		// release pieces that have been pushed too far up
 		if (layer.yCanRelease) {
-			// release pieces that have been pushed too far up
-			var pieces = layer.pieces;
 			var finished = false;
 			while (pieces.length && !finished) {
 				var py = layer.getMaxPieceY(pieces[0]);
@@ -226,8 +254,8 @@ exports = Class(function() {
 			}
 		}
 
+		// spawn pieces about to appear on the bottom
 		if (layer.yCanSpawn) {
-			// spawn pieces about to appear on the bottom
 			var valid = true;
 			while (valid && layer.ySpawnMax < -y + rvs.height) {
 				valid = layer.spawnPieceDown();
@@ -259,8 +287,10 @@ var LayerView = exports.LayerView = Class(View, function() {
 		this.yCanRelease = true;
 		this.yGapRange = [0, 0];
 		// misc. layer and piece spawning properties
+		this.id = "";
 		this.index = 0;
-		this._uid = "";
+		this.spawnCount = 0;
+		this.spawnBounded = false;
 		this.ordered = false;
 		this.pieceOptions = [];
 		this.pieces = [];
@@ -273,33 +303,31 @@ var LayerView = exports.LayerView = Class(View, function() {
 
 	this.reset = function(config, index) {
 		this.xMultiplier = config.xMultiplier !== void 0
-			? config.xMultiplier
-			: 1;
+			? config.xMultiplier : 1;
 		this.xGapRange = config.xGapRange || [0, 0];
 		this.xCanSpawn = config.xCanSpawn !== void 0
-			? config.xCanSpawn
-			: true;
+			? config.xCanSpawn : true;
 		this.xCanRelease = config.xCanRelease !== void 0
-			? config.xCanRelease
-			: this.xCanSpawn;
+			? config.xCanRelease : this.xCanSpawn;
 		this.xSpawnMin = this.getGapX();
 		this.xSpawnMax = this.xSpawnMin + this.getGapX();
 
 		this.yMultiplier = config.yMultiplier !== void 0
-			? config.yMultiplier
-			: 1;
+			? config.yMultiplier : 1;
 		this.yGapRange = config.yGapRange || [0, 0];
 		this.yCanSpawn = config.yCanSpawn !== void 0
-			? config.yCanSpawn
-			: true;
+			? config.yCanSpawn : true;
 		this.yCanRelease = config.yCanRelease !== void 0
-			? config.yCanRelease
-			: this.yCanSpawn;
+			? config.yCanRelease : this.yCanSpawn;
 		this.ySpawnMin = this.getGapY();
 		this.ySpawnMax = this.ySpawnMin + this.getGapY();
 
+		this.id = config.id !== void 0
+			? config.id : "" + _uid++;
 		this.index = index;
-		this.id = (config.id !== undefined) ? config.id : ("" + _uid++);
+		this.spawnCount = config.spawnCount !== void 0
+			? config.spawnCount : Infinity;
+		this.spawnBounded = config.spawnBounded || false;
 		this.ordered = config.ordered || false;
 		this.pieceOptions = config.pieceOptions;
 		this.pieces = [];
@@ -367,7 +395,7 @@ var LayerView = exports.LayerView = Class(View, function() {
 		var index = this.getNextPieceIndex(-1);
 		var data = this.pieceOptions[index];
 		var pieceData = pieceCache[data.id];
-		if (pieceData) {
+		if (pieceData && this.spawnCount > 0) {
 			var piece = this.addPiece(data);
 			var x = pieceData.x || 0;
 			var y = pieceData.y !== void 0
@@ -382,10 +410,12 @@ var LayerView = exports.LayerView = Class(View, function() {
 			ps.x = this.xSpawnMin + x - pieceData.width * sx - xCorrection;
 			ps.y = y - yCorrection;
 			this.applyStyleRanges(piece, pieceData);
+			this.alignPieceX(piece, pieceData);
 			this.alignPieceY(piece, pieceData);
 			this.pieces.unshift(piece);
 			this.updateSpawnX(piece);
 			this.yCanSpawn && this.updateSpawnY(piece);
+			this.spawnCount--;
 			return true;
 		} else {
 			return false;
@@ -396,7 +426,7 @@ var LayerView = exports.LayerView = Class(View, function() {
 		var index = this.getNextPieceIndex(1);
 		var data = this.pieceOptions[index];
 		var pieceData = pieceCache[data.id];
-		if (pieceData) {
+		if (pieceData && this.spawnCount > 0) {
 			var piece = this.addPiece(data);
 			var x = pieceData.x || 0;
 			var y = pieceData.y !== void 0
@@ -411,10 +441,12 @@ var LayerView = exports.LayerView = Class(View, function() {
 			ps.x = this.xSpawnMax + x - xCorrection;
 			ps.y = y - yCorrection;
 			this.applyStyleRanges(piece, pieceData);
+			this.alignPieceX(piece, pieceData);
 			this.alignPieceY(piece, pieceData);
 			this.pieces.push(piece);
 			this.updateSpawnX(piece);
 			this.yCanSpawn && this.updateSpawnY(piece);
+			this.spawnCount--;
 			return true;
 		} else {
 			return false;
@@ -425,7 +457,7 @@ var LayerView = exports.LayerView = Class(View, function() {
 		var index = this.getNextPieceIndex(-1);
 		var data = this.pieceOptions[index];
 		var pieceData = pieceCache[data.id];
-		if (pieceData) {
+		if (pieceData && this.spawnCount > 0) {
 			var piece = this.addPiece(data);
 			var x = pieceData.x !== void 0
 				? pieceData.x
@@ -441,9 +473,11 @@ var LayerView = exports.LayerView = Class(View, function() {
 			ps.y = this.ySpawnMin + y - pieceData.height * sy - yCorrection;
 			this.applyStyleRanges(piece, pieceData);
 			this.alignPieceX(piece, pieceData);
+			this.alignPieceY(piece, pieceData);
 			this.pieces.unshift(piece);
 			this.updateSpawnY(piece);
 			this.xCanSpawn && this.updateSpawnX(piece);
+			this.spawnCount--;
 			return true;
 		} else {
 			return false;
@@ -454,7 +488,7 @@ var LayerView = exports.LayerView = Class(View, function() {
 		var index = this.getNextPieceIndex(1);
 		var data = this.pieceOptions[index];
 		var pieceData = pieceCache[data.id];
-		if (pieceData) {
+		if (pieceData && this.spawnCount > 0) {
 			var piece = this.addPiece(data);
 			var x = pieceData.x !== void 0
 				? pieceData.x
@@ -470,9 +504,11 @@ var LayerView = exports.LayerView = Class(View, function() {
 			ps.y = this.ySpawnMax + y - yCorrection;
 			this.applyStyleRanges(piece, pieceData);
 			this.alignPieceX(piece, pieceData);
+			this.alignPieceY(piece, pieceData);
 			this.pieces.push(piece);
 			this.updateSpawnY(piece);
 			this.xCanSpawn && this.updateSpawnX(piece);
+			this.spawnCount--;
 			return true;
 		} else {
 			return false;

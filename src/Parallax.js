@@ -4,6 +4,8 @@ import ui.resource.Image as Image;
 import ui.ViewPool as ViewPool;
 
 // math and random utilities
+var min = Math.min;
+var max = Math.max;
 var floor = Math.floor;
 var random = Math.random;
 var rollFloat = function(mn, mx) { return mn + random() * (mx - mn); };
@@ -114,10 +116,12 @@ exports = Class(function() {
 		var pieces = layer.pieces;
 
 		// stop the layer if bounded by finite spawned pieces
-		if (layer.spawnBounded && pieces.length && layer.spawnCount === 0) {
-			if (layer.xSpawnMin > -x) {
-				x = layer.style.x -= layer.xSpawnMin + x;
-			}
+		if (layer.spawnBounded
+			&& !layer.spawnCount
+			&& pieces.length
+			&& layer.xSpawnMin > -x)
+		{
+			x = layer.style.x -= layer.xSpawnMin + x;
 		}
 
 		// release pieces that have been pushed too far right
@@ -135,7 +139,7 @@ exports = Class(function() {
 		}
 
 		// spawn pieces about to appear on the left
-		if (layer.xCanSpawn) {
+		if (layer.isValidSpawnX(-x)) {
 			var valid = true;
 			while (valid && layer.xSpawnMin > -x) {
 				valid = layer.spawnPieceLeft();
@@ -154,10 +158,12 @@ exports = Class(function() {
 		var pieces = layer.pieces;
 
 		// stop the layer if bounded by finite spawned pieces
-		if (layer.spawnBounded && pieces.length && layer.spawnCount === 0) {
-			if (layer.xSpawnMax < -x + rvs.width) {
-				x = layer.style.x += -x + rvs.width - layer.xSpawnMax;
-			}
+		if (layer.spawnBounded
+			&& !layer.spawnCount
+			&& pieces.length
+			&& layer.xSpawnMax < -x + rvs.width)
+		{
+			x = layer.style.x += -x + rvs.width - layer.xSpawnMax;
 		}
 
 		// release pieces that have been pushed too far left
@@ -175,7 +181,7 @@ exports = Class(function() {
 		}
 
 		// spawn pieces about to appear on the right
-		if (layer.xCanSpawn) {
+		if (layer.isValidSpawnX(-x)) {
 			var valid = true;
 			while (valid && layer.xSpawnMax < -x + rvs.width) {
 				valid = layer.spawnPieceRight();
@@ -194,10 +200,12 @@ exports = Class(function() {
 		var pieces = layer.pieces;
 
 		// stop the layer if bounded by finite spawned pieces
-		if (layer.spawnBounded && pieces.length && layer.spawnCount === 0) {
-			if (layer.ySpawnMin > -y) {
-				y = layer.style.y -= layer.ySpawnMin + y;
-			}
+		if (layer.spawnBounded
+			&& !layer.spawnCount
+			&& pieces.length
+			&& layer.ySpawnMin > -y)
+		{
+			y = layer.style.y -= layer.ySpawnMin + y;
 		}
 
 		// release pieces that have been pushed too far down
@@ -215,7 +223,7 @@ exports = Class(function() {
 		}
 
 		// spawn pieces about to appear on the top
-		if (layer.yCanSpawn) {
+		if (layer.isValidSpawnY(-y)) {
 			var valid = true;
 			while (valid && layer.ySpawnMin > -y) {
 				valid = layer.spawnPieceUp();
@@ -234,10 +242,12 @@ exports = Class(function() {
 		var pieces = layer.pieces;
 
 		// stop the layer if bounded by finite spawned pieces
-		if (layer.spawnBounded && pieces.length && layer.spawnCount === 0) {
-			if (layer.ySpawnMax < -y + rvs.height) {
-				y = layer.style.y += -y + rvs.height - layer.ySpawnMax;
-			}
+		if (layer.spawnBounded
+			&& !layer.spawnCount
+			&& pieces.length
+			&& layer.ySpawnMax < -y + rvs.height)
+		{
+			y = layer.style.y += -y + rvs.height - layer.ySpawnMax;
 		}
 
 		// release pieces that have been pushed too far up
@@ -255,7 +265,7 @@ exports = Class(function() {
 		}
 
 		// spawn pieces about to appear on the bottom
-		if (layer.yCanSpawn) {
+		if (layer.isValidSpawnY(-y)) {
 			var valid = true;
 			while (valid && layer.ySpawnMax < -y + rvs.height) {
 				valid = layer.spawnPieceDown();
@@ -275,6 +285,8 @@ var LayerView = exports.LayerView = Class(View, function() {
 		// horizontal properties
 		this.xSpawnMin = 0;
 		this.xSpawnMax = 0;
+		this.xLimitMin = 0;
+		this.xLimitMax = 0;
 		this.xMultiplier = 1;
 		this.xCanSpawn = true;
 		this.xCanRelease = true;
@@ -282,6 +294,8 @@ var LayerView = exports.LayerView = Class(View, function() {
 		// vertical properties
 		this.ySpawnMin = 0;
 		this.ySpawnMax = 0;
+		this.yLimitMin = 0;
+		this.yLimitMax = 0;
 		this.yMultiplier = 1;
 		this.yCanSpawn = true;
 		this.yCanRelease = true;
@@ -309,8 +323,27 @@ var LayerView = exports.LayerView = Class(View, function() {
 			? config.xCanSpawn : true;
 		this.xCanRelease = config.xCanRelease !== void 0
 			? config.xCanRelease : this.xCanSpawn;
-		this.xSpawnMin = this.getGapX();
-		this.xSpawnMax = this.xSpawnMin + this.getGapX();
+
+		if (config.xLimitMin !== void 0) {
+			this.xLimitMin = config.xLimitMin;
+			this.xSpawnMin = config.xLimitMin;
+		} else {
+			this.xLimitMin = -Number.MAX_VALUE;
+			this.xSpawnMin = -this.getGapX();
+		}
+
+		if (config.xLimitMax !== void 0) {
+			this.xLimitMax = config.xLimitMax;
+			this.xSpawnMax = config.xLimitMax;
+		} else {
+			this.xLimitMax = Number.MAX_VALUE;
+			this.xSpawnMax = this.getGapX();
+		}
+
+		this.xLimitMin = min(this.xLimitMin, this.xLimitMax);
+		this.xLimitMax = max(this.xLimitMin, this.xLimitMax);
+		this.xSpawnMin = min(this.xSpawnMin, this.xSpawnMax);
+		this.xSpawnMax = max(this.xSpawnMin, this.xSpawnMax);
 
 		this.yMultiplier = config.yMultiplier !== void 0
 			? config.yMultiplier : 1;
@@ -319,8 +352,27 @@ var LayerView = exports.LayerView = Class(View, function() {
 			? config.yCanSpawn : true;
 		this.yCanRelease = config.yCanRelease !== void 0
 			? config.yCanRelease : this.yCanSpawn;
-		this.ySpawnMin = this.getGapY();
-		this.ySpawnMax = this.ySpawnMin + this.getGapY();
+
+		if (config.yLimitMin !== void 0) {
+			this.yLimitMin = config.yLimitMin;
+			this.ySpawnMin = config.yLimitMin;
+		} else {
+			this.yLimitMin = -Number.MAX_VALUE;
+			this.ySpawnMin = -this.getGapY();
+		}
+
+		if (config.yLimitMax !== void 0) {
+			this.yLimitMax = config.yLimitMax;
+			this.ySpawnMax = config.yLimitMax;
+		} else {
+			this.yLimitMax = Number.MAX_VALUE;
+			this.ySpawnMax = this.getGapY();
+		}
+
+		this.yLimitMin = min(this.yLimitMin, this.yLimitMax);
+		this.yLimitMax = max(this.yLimitMin, this.yLimitMax);
+		this.ySpawnMin = min(this.ySpawnMin, this.ySpawnMax);
+		this.ySpawnMax = max(this.ySpawnMin, this.ySpawnMax);
 
 		this.id = config.id !== void 0
 			? config.id : "" + _uid++;
@@ -395,7 +447,10 @@ var LayerView = exports.LayerView = Class(View, function() {
 		var index = this.getNextPieceIndex(-1);
 		var data = this.pieceOptions[index];
 		var pieceData = pieceCache[data.id];
-		if (pieceData && this.spawnCount > 0) {
+		if (pieceData
+			&& this.spawnCount > 0
+			&& this.isValidSpawnX(this.xSpawnMin))
+		{
 			var piece = this.addPiece(data);
 			var x = pieceData.x || 0;
 			var y = pieceData.y !== void 0
@@ -426,7 +481,10 @@ var LayerView = exports.LayerView = Class(View, function() {
 		var index = this.getNextPieceIndex(1);
 		var data = this.pieceOptions[index];
 		var pieceData = pieceCache[data.id];
-		if (pieceData && this.spawnCount > 0) {
+		if (pieceData
+			&& this.spawnCount > 0
+			&& this.isValidSpawnX(this.xSpawnMax))
+		{
 			var piece = this.addPiece(data);
 			var x = pieceData.x || 0;
 			var y = pieceData.y !== void 0
@@ -457,7 +515,10 @@ var LayerView = exports.LayerView = Class(View, function() {
 		var index = this.getNextPieceIndex(-1);
 		var data = this.pieceOptions[index];
 		var pieceData = pieceCache[data.id];
-		if (pieceData && this.spawnCount > 0) {
+		if (pieceData
+			&& this.spawnCount > 0
+			&& this.isValidSpawnY(this.ySpawnMin))
+		{
 			var piece = this.addPiece(data);
 			var x = pieceData.x !== void 0
 				? pieceData.x
@@ -488,7 +549,10 @@ var LayerView = exports.LayerView = Class(View, function() {
 		var index = this.getNextPieceIndex(1);
 		var data = this.pieceOptions[index];
 		var pieceData = pieceCache[data.id];
-		if (pieceData && this.spawnCount > 0) {
+		if (pieceData
+			&& this.spawnCount > 0
+			&& this.isValidSpawnY(this.ySpawnMax))
+		{
 			var piece = this.addPiece(data);
 			var x = pieceData.x !== void 0
 				? pieceData.x
@@ -595,25 +659,25 @@ var LayerView = exports.LayerView = Class(View, function() {
 	this.getMinPieceX = function(piece) {
 		var ps = piece.style;
 		var scale = ps.scale * ps.scaleX;
-		return ps.x + (1 - scale) * ps.anchorX;
+		return ps.x + ps.offsetX + (1 - scale) * ps.anchorX;
 	};
 
 	this.getMaxPieceX = function(piece) {
 		var ps = piece.style;
 		var scale = ps.scale * ps.scaleX;
-		return ps.x + (1 - scale) * ps.anchorX + scale * ps.width;
+		return ps.x + ps.offsetX + (1 - scale) * ps.anchorX + scale * ps.width;
 	};
 
 	this.getMinPieceY = function(piece) {
 		var ps = piece.style;
 		var scale = ps.scale * ps.scaleY;
-		return ps.y + (1 - scale) * ps.anchorY;
+		return ps.y + ps.offsetY + (1 - scale) * ps.anchorY;
 	};
 
 	this.getMaxPieceY = function(piece) {
 		var ps = piece.style;
 		var scale = ps.scale * ps.scaleY;
-		return ps.y + (1 - scale) * ps.anchorY + scale * ps.height;
+		return ps.y + ps.offsetY + (1 - scale) * ps.anchorY + scale * ps.height;
 	};
 
 	this.getGapX = function() {
@@ -622,5 +686,13 @@ var LayerView = exports.LayerView = Class(View, function() {
 
 	this.getGapY = function() {
 		return rollInt(this.yGapRange[0], this.yGapRange[1])
+	};
+
+	this.isValidSpawnX = function (x) {
+		return this.xCanSpawn && x >= this.xLimitMin && x <= this.xLimitMax;
+	};
+
+	this.isValidSpawnY = function (y) {
+		return this.yCanSpawn && y >= this.yLimitMin && y <= this.yLimitMax;
 	};
 });

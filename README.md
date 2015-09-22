@@ -55,6 +55,7 @@ The `reset` function expects the paramater `config`, an array of objects that ea
  * `yCanRelease` - type: `boolean` - whether or not vertical movement allows parallax pieces to recycle once off-screen; defaults to `true`
  * `yGapRange` - type: `array` - in the format `[min, max]`, determines the vertical spacing between parallax pieces on this layer; defaults to `[0, 0]` for no spacing
  * `zIndex` - type: `number` - zIndex of this layer within the rootView; defaults to `0`
+ * `scaleMultiplier` - type: `number` - value between 0 and 1, how much a parallax layer should be affected by scaling, like from a camera viewport implementation
  * `ordered` - type: `boolean` - `false` by default, means that a piece is randomly chosen; if `true`, iterates over each piece in order and loops
  * `pieceOptions` - type: `array` - (REQUIRED) an array of config objects representing parallax pieces
 

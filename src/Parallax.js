@@ -98,7 +98,7 @@ var Parallax = exports = Class(function () {
   };
 
   /**
-   * moveLayerRight: updates layer position, spawns and releases pieces
+   * moveLayerHorizontally: updates layer position, spawns and releases pieces
    * ~ layer: the layer to move
    * ~ dx: how far to move
    */
@@ -159,7 +159,7 @@ var Parallax = exports = Class(function () {
   };
 
   /**
-   * moveLayerDown: updates layer position, spawns and releases pieces
+   * moveLayerVertically: updates layer position, spawns and releases pieces
    * ~ layer: the layer to move
    * ~ dy: how far to move
    */

@@ -3,8 +3,6 @@ import ui.ImageView as ImageView;
 import ui.resource.Image as Image;
 import ui.ViewPool as ViewPool;
 
-var _spawnsThisTick = 0;
-
 // math and random utilities
 var min = Math.min;
 var max = Math.max;
@@ -17,7 +15,7 @@ var rollInt = function (mn, mx) { return floor(mn + random() * (1 + mx - mn)); }
 var pieceCache = {};
 
 // the Parallax Class
-exports = Class(function () {
+var Parallax = exports = Class(function () {
   /**
    * init: the constructor function of Parallax
    * ~ accepts an opts object parameter with these optional properties
@@ -72,8 +70,8 @@ exports = Class(function () {
       var layer = this.layerPool.obtainView(layerOpts);
       layer.reset(config[i], i);
       // populate initial layers to fill the screen
-      this.moveLayerLeft(layer, 0);
-      this.moveLayerUp(layer, 0);
+      this.moveLayerHorizontally(layer, 0);
+      this.moveLayerVertically(layer, 0);
       this.layerMap[layer.id] = layer;
     }
   };
@@ -91,20 +89,11 @@ exports = Class(function () {
     this.layerPool.forEachActiveView(function (layer, i) {
       _spawnsThisTick = 0;
       var layerX = ~~(x * layer.xMultiplier);
-      var dx = layerX - layer.style.x;
-      if (dx > 0) {
-        this.moveLayerRight(layer, dx);
-      } else if (dx < 0) {
-        this.moveLayerLeft(layer, dx);
-      }
-
       var layerY = ~~(y * layer.yMultiplier);
+      var dx = layerX - layer.style.x;
       var dy = layerY - layer.style.y;
-      if (dy > 0) {
-        this.moveLayerDown(layer, dy);
-      } else if (dy < 0) {
-        this.moveLayerUp(layer, dy);
-      }
+      this.moveLayerHorizontally(layer, dx);
+      this.moveLayerVertically(layer, dy);
     }, this);
   };
 
@@ -113,80 +102,57 @@ exports = Class(function () {
    * ~ layer: the layer to move
    * ~ dx: how far to move
    */
-  this.moveLayerRight = function (layer, dx) {
+  this.moveLayerHorizontally = function (layer, dx) {
     var x = layer.style.x += dx;
     var rvs = this.rootView.style;
     var pieces = layer.pieces;
 
     // stop the layer if bounded by finite spawned pieces
-    if (layer.spawnBounded
-      && !layer.spawnCount
-      && pieces.length
-      && layer.xSpawnMin > -x)
-    {
-      x = layer.style.x -= layer.xSpawnMin + x;
+    if (layer.spawnBounded && !layer.spawnCount && pieces.length) {
+      if (layer.getRelativeX(layer.xSpawnMin) > -x) {
+        x = layer.style.x -= layer.getRelativeX(layer.xSpawnMin) + x;
+      } else if (layer.getRelativeX(layer.xSpawnMax) < -x + rvs.width) {
+        x = layer.style.x += -x + rvs.width - layer.getRelativeX(layer.xSpawnMax);
+      }
     }
 
-    // release pieces that have been pushed too far right
+    // release pieces that have been pushed too far right or left
     if (layer.xCanRelease) {
-      var finished = false;
-      while (pieces.length && !finished) {
-        var px = layer.getMinPieceX(pieces[pieces.length - 1]);
-        if (px >= -x + rvs.width) {
-          layer.xSpawnMax = px;
-          layer.piecePool.releaseView(pieces.pop());
-        } else {
-          finished = true;
+      var px = 0;
+      var finishedRight = false;
+      var finishedLeft = false;
+      while (pieces.length && (!finishedRight || !finishedLeft)) {
+        if (!finishedRight) {
+          px = layer.getMinPieceX(pieces[pieces.length - 1]);
+          if (layer.getRelativeX(px) >= -x + rvs.width) {
+            layer.xSpawnMax = px;
+            layer.piecePool.releaseView(pieces.pop());
+          } else {
+            finishedRight = true;
+          }
+        }
+
+        if (!finishedLeft && pieces.length) {
+          px = layer.getMaxPieceX(pieces[0]);
+          if (layer.getRelativeX(px) <= -x) {
+            layer.xSpawnMin = px;
+            layer.piecePool.releaseView(pieces.shift());
+          } else {
+            finishedLeft = true;
+          }
         }
       }
     }
 
-    // spawn pieces about to appear on the left
+    // spawn pieces about to appear on the left or right
     if (layer.isValidSpawnX(-x)) {
       var valid = true;
-      while (valid && layer.xSpawnMin > -x) {
+      while (valid && layer.getRelativeX(layer.xSpawnMin) > -x) {
         valid = layer.spawnPieceLeft();
       }
-    }
-  };
 
-  /**
-   * moveLayerLeft: updates layer position, spawns and releases pieces
-   * ~ layer: the layer to move
-   * ~ dx: how far to move
-   */
-  this.moveLayerLeft = function (layer, dx) {
-    var x = layer.style.x += dx;
-    var rvs = this.rootView.style;
-    var pieces = layer.pieces;
-
-    // stop the layer if bounded by finite spawned pieces
-    if (layer.spawnBounded
-      && !layer.spawnCount
-      && pieces.length
-      && layer.xSpawnMax < -x + rvs.width)
-    {
-      x = layer.style.x += -x + rvs.width - layer.xSpawnMax;
-    }
-
-    // release pieces that have been pushed too far left
-    if (layer.xCanRelease) {
-      var finished = false;
-      while (pieces.length && !finished) {
-        var px = layer.getMaxPieceX(pieces[0]);
-        if (px <= -x) {
-          layer.xSpawnMin = px;
-          layer.piecePool.releaseView(pieces.shift());
-        } else {
-          finished = true;
-        }
-      }
-    }
-
-    // spawn pieces about to appear on the right
-    if (layer.isValidSpawnX(-x)) {
-      var valid = true;
-      while (valid && layer.xSpawnMax < -x + rvs.width) {
+      valid = true;
+      while (valid && layer.getRelativeX(layer.xSpawnMax) < -x + rvs.width) {
         valid = layer.spawnPieceRight();
       }
     }
@@ -197,80 +163,57 @@ exports = Class(function () {
    * ~ layer: the layer to move
    * ~ dy: how far to move
    */
-  this.moveLayerDown = function (layer, dy) {
+  this.moveLayerVertically = function (layer, dy) {
     var y = layer.style.y += dy;
     var rvs = this.rootView.style;
     var pieces = layer.pieces;
 
     // stop the layer if bounded by finite spawned pieces
-    if (layer.spawnBounded
-      && !layer.spawnCount
-      && pieces.length
-      && layer.ySpawnMin > -y)
-    {
-      y = layer.style.y -= layer.ySpawnMin + y;
+    if (layer.spawnBounded && !layer.spawnCount && pieces.length) {
+      if (layer.getRelativeY(layer.ySpawnMin) > -y) {
+        y = layer.style.y -= layer.getRelativeY(layer.ySpawnMin) + y;
+      } else if (layer.getRelativeY(layer.ySpawnMax) < -y + rvs.height) {
+        y = layer.style.y += -y + rvs.height - layer.getRelativeY(layer.ySpawnMax);
+      }
     }
 
-    // release pieces that have been pushed too far down
+    // release pieces that have been pushed too far down or up
     if (layer.yCanRelease) {
-      var finished = false;
-      while (pieces.length && !finished) {
-        var py = layer.getMinPieceY(pieces[pieces.length - 1]);
-        if (py >= -y + rvs.height) {
-          layer.ySpawnMax = py;
-          layer.piecePool.releaseView(pieces.pop());
-        } else {
-          finished = true;
+      var py = 0;
+      var finishedDown = false;
+      var finishedUp = false;
+      while (pieces.length && (!finishedDown || !finishedUp)) {
+        if (!finishedDown) {
+          py = layer.getMinPieceY(pieces[pieces.length - 1]);
+          if (layer.getRelativeY(py) >= -y + rvs.height) {
+            layer.ySpawnMax = py;
+            layer.piecePool.releaseView(pieces.pop());
+          } else {
+            finishedDown = true;
+          }
+        }
+
+        if (!finishedUp && pieces.length) {
+          py = layer.getMaxPieceY(pieces[0]);
+          if (layer.getRelativeY(py) <= -y) {
+            layer.ySpawnMin = py;
+            layer.piecePool.releaseView(pieces.shift());
+          } else {
+            finishedUp = true;
+          }
         }
       }
     }
 
-    // spawn pieces about to appear on the top
+    // spawn pieces about to appear on the top or bottom
     if (layer.isValidSpawnY(-y)) {
       var valid = true;
-      while (valid && layer.ySpawnMin > -y) {
+      while (valid && layer.getRelativeY(layer.ySpawnMin) > -y) {
         valid = layer.spawnPieceUp();
       }
-    }
-  };
 
-  /**
-   * moveLayerUp: updates layer position, spawns and releases pieces
-   * ~ layer: the layer to move
-   * ~ dy: how far to move
-   */
-  this.moveLayerUp = function (layer, dy) {
-    var y = layer.style.y += dy;
-    var rvs = this.rootView.style;
-    var pieces = layer.pieces;
-
-    // stop the layer if bounded by finite spawned pieces
-    if (layer.spawnBounded
-      && !layer.spawnCount
-      && pieces.length
-      && layer.ySpawnMax < -y + rvs.height)
-    {
-      y = layer.style.y += -y + rvs.height - layer.ySpawnMax;
-    }
-
-    // release pieces that have been pushed too far up
-    if (layer.yCanRelease) {
-      var finished = false;
-      while (pieces.length && !finished) {
-        var py = layer.getMaxPieceY(pieces[0]);
-        if (py <= -y) {
-          layer.ySpawnMin = py;
-          layer.piecePool.releaseView(pieces.shift());
-        } else {
-          finished = true;
-        }
-      }
-    }
-
-    // spawn pieces about to appear on the bottom
-    if (layer.isValidSpawnY(-y)) {
-      var valid = true;
-      while (valid && layer.ySpawnMax < -y + rvs.height) {
+      valid = true;
+      while (valid && layer.getRelativeY(layer.ySpawnMax) < -y + rvs.height) {
         valid = layer.spawnPieceDown();
       }
     }
@@ -465,14 +408,11 @@ var LayerView = exports.LayerView = Class(View, function () {
   };
 
   this.spawnPieceLeft = function () {
-    _spawnsThisTick++;
-    if (_spawnsThisTick > 10) {
-      return false;
-    }
     var index = this.getNextPieceIndex(-1);
     var data = this.pieceOptions[index];
     var pieceData = pieceCache[data.id];
-    if (pieceData
+    if (validateSpawn()
+      && pieceData
       && this.spawnCount > 0
       && this.isValidSpawnX(this.xSpawnMin))
     {
@@ -503,14 +443,11 @@ var LayerView = exports.LayerView = Class(View, function () {
   };
 
   this.spawnPieceRight = function () {
-    _spawnsThisTick++;
-    if (_spawnsThisTick > 10) {
-      return false;
-    }
     var index = this.getNextPieceIndex(1);
     var data = this.pieceOptions[index];
     var pieceData = pieceCache[data.id];
-    if (pieceData
+    if (validateSpawn()
+      && pieceData
       && this.spawnCount > 0
       && this.isValidSpawnX(this.xSpawnMax))
     {
@@ -541,14 +478,11 @@ var LayerView = exports.LayerView = Class(View, function () {
   };
 
   this.spawnPieceUp = function () {
-    _spawnsThisTick++;
-    if (_spawnsThisTick > 10) {
-      return false;
-    }
     var index = this.getNextPieceIndex(-1);
     var data = this.pieceOptions[index];
     var pieceData = pieceCache[data.id];
-    if (pieceData
+    if (validateSpawn()
+      && pieceData
       && this.spawnCount > 0
       && this.isValidSpawnY(this.ySpawnMin))
     {
@@ -579,14 +513,11 @@ var LayerView = exports.LayerView = Class(View, function () {
   };
 
   this.spawnPieceDown = function () {
-    _spawnsThisTick++;
-    if (_spawnsThisTick > 10) {
-      return false;
-    }
     var index = this.getNextPieceIndex(1);
     var data = this.pieceOptions[index];
     var pieceData = pieceCache[data.id];
-    if (pieceData
+    if (validateSpawn()
+      && pieceData
       && this.spawnCount > 0
       && this.isValidSpawnY(this.ySpawnMax))
     {
@@ -644,7 +575,6 @@ var LayerView = exports.LayerView = Class(View, function () {
       piece.currImage = pieceData.img;
       piece.setImage(pieceData.img);
     }
-    piece.origScale = piece.style.scale;
     return piece;
   };
 
@@ -697,37 +627,25 @@ var LayerView = exports.LayerView = Class(View, function () {
   this.getMinPieceX = function (piece) {
     var ps = piece.style;
     var scale = ps.scale * ps.scaleX;
-    var x = ps.x + ps.offsetX + (1 - scale) * ps.anchorX;
-    // apply layer scale
-    var s = this.style;
-    return s.scale * (x - s.anchorX) + s.anchorX;
+    return ps.x + ps.offsetX + (1 - scale) * ps.anchorX;
   };
 
   this.getMaxPieceX = function (piece) {
     var ps = piece.style;
     var scale = ps.scale * ps.scaleX;
-    var x = ps.x + ps.offsetX + (1 - scale) * ps.anchorX + scale * ps.width;
-    // apply layer scale
-    var s = this.style;
-    return s.scale * (x - s.anchorX) + s.anchorX;
+    return ps.x + ps.offsetX + (1 - scale) * ps.anchorX + scale * ps.width;
   };
 
   this.getMinPieceY = function (piece) {
     var ps = piece.style;
     var scale = ps.scale * ps.scaleY;
-    var y = ps.y + ps.offsetY + (1 - scale) * ps.anchorY;
-    // apply layer scale
-    var s = this.style;
-    return s.scale * (y - s.anchorY) + s.anchorY;
+    return ps.y + ps.offsetY + (1 - scale) * ps.anchorY;
   };
 
   this.getMaxPieceY = function (piece) {
     var ps = piece.style;
     var scale = ps.scale * ps.scaleY;
-    var y = ps.y + ps.offsetY + (1 - scale) * ps.anchorY + scale * ps.height;
-    // apply layer scale
-    var s = this.style;
-    return s.scale * (y - s.anchorY) + s.anchorY;
+    return ps.y + ps.offsetY + (1 - scale) * ps.anchorY + scale * ps.height;
   };
 
   this.getGapX = function () {
@@ -747,11 +665,43 @@ var LayerView = exports.LayerView = Class(View, function () {
   };
 
   this.setScale = function (scale) {
+    if (!scale) {
+      throw new Error("Invalid scale set on Parallax layer:", scale);
+    }
+
     var ds = scale - 1;
     var appliedScale = ds * this.scaleMultiplier + 1;
     this.style.scale = appliedScale;
-    // this.piecePool.forEachActiveView(function (piece, i) {
-    //   piece.style.scale = appliedScale * piece.origScale;
-    // });
+  };
+
+  this.getRelativeX = function (x) {
+    var s = this.style;
+    return s.scale * (x - s.anchorX) + s.anchorX;
+  };
+
+  this.getRelativeY = function (y) {
+    var s = this.style;
+    return s.scale * (y - s.anchorY) + s.anchorY;
   };
 });
+
+/**
+ * NOTE: these are helpful if you are debugging or modifying parallax logic;
+ * it is easy to break, and can have browser-crashing consequences;
+ * disable THROW_ERRORS at your own risk!
+ */
+exports.THROW_ERRORS = true;
+exports.SPAWN_LIMIT_PER_TICK = 1000;
+
+var _spawnsThisTick = 0;
+function validateSpawn () {
+  _spawnsThisTick++;
+  if (_spawnsThisTick > exports.SPAWN_LIMIT_PER_TICK) {
+    // avoid crashing the browser during development ...
+    if (exports.THROW_ERRORS) {
+      throw new Error("Parallax Spawn Error: too many pieces in one tick!");
+    }
+    return false;
+  }
+  return true;
+};

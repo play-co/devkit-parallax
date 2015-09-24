@@ -33,6 +33,8 @@ var Parallax = exports = Class(function () {
       ctor: opts.layerCtor || LayerView,
       initCount: opts.layerInitCount || 0
     });
+    // track time
+    this._time = Date.now();
     // save opts for later
     this._opts = opts;
     this.layerMap = {};
@@ -43,6 +45,7 @@ var Parallax = exports = Class(function () {
    * ~ see README.md for details on config parameter
    */
   this.reset = function (config) {
+    this._time = Date.now();
     this.releaseLayers();
     this.initializeLayers(config);
   };
@@ -85,16 +88,30 @@ var Parallax = exports = Class(function () {
    * ~ x: the horizontal coordinate of the parallax, starts at 0
    * ~ y: the vertical coordinate of the parallax, starts at 0
    */
-  this.update = function (x, y) {
+  this.update = function (x, y, dt) {
+    var now = Date.now();
+    if (dt === void 0) {
+      dt = now - this._time;
+    }
+
     this.layerPool.forEachActiveView(function (layer, i) {
       _spawnsThisTick = 0;
-      var layerX = ~~(x * layer.xMultiplier);
-      var layerY = ~~(y * layer.yMultiplier);
+
+      // layers can have their own velocity, like a flowing river
+      var secs = dt / 1000;
+      layer.xPosition += secs * layer.xVelocity;
+      layer.yPosition += secs * layer.yVelocity;
+
+      // update layer view position
+      var layerX = ~~(x * layer.xMultiplier) + layer.xPosition;
+      var layerY = ~~(y * layer.yMultiplier) + layer.yPosition;
       var dx = layerX - layer.style.x;
       var dy = layerY - layer.style.y;
       this.moveLayerHorizontally(layer, dx);
       this.moveLayerVertically(layer, dy);
     }, this);
+
+    this._time = now;
   };
 
   /**
@@ -246,6 +263,8 @@ var LayerView = exports.LayerView = Class(View, function () {
     this.xCanSpawn = true;
     this.xCanRelease = true;
     this.xGapRange = [0, 0];
+    this.xPosition = 0;
+    this.xVelocity = 0;
     // vertical properties
     this.ySpawnMin = 0;
     this.ySpawnMax = 0;
@@ -255,6 +274,8 @@ var LayerView = exports.LayerView = Class(View, function () {
     this.yCanSpawn = true;
     this.yCanRelease = true;
     this.yGapRange = [0, 0];
+    this.yPosition = 0;
+    this.yVelocity = 0;
     // misc. layer and piece spawning properties
     this.id = "";
     this.index = 0;
@@ -285,6 +306,8 @@ var LayerView = exports.LayerView = Class(View, function () {
       ? config.xCanSpawn : true;
     this.xCanRelease = config.xCanRelease !== void 0
       ? config.xCanRelease : this.xCanSpawn;
+    this.xPosition = 0;
+    this.xVelocity = config.xVelocity || 0;
 
     if (config.xLimitMin !== void 0) {
       this.xLimitMin = config.xLimitMin;
@@ -314,6 +337,8 @@ var LayerView = exports.LayerView = Class(View, function () {
       ? config.yCanSpawn : true;
     this.yCanRelease = config.yCanRelease !== void 0
       ? config.yCanRelease : this.yCanSpawn;
+    this.yPosition = 0;
+    this.yVelocity = config.yVelocity || 0;
 
     if (config.yLimitMin !== void 0) {
       this.yLimitMin = config.yLimitMin;

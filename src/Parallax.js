@@ -162,15 +162,38 @@ var Parallax = exports = Class(function () {
     }
 
     // spawn pieces about to appear on the left or right
+    // NOTE: the order of the following while loops matters!
+    // we handle unexpected directions first (max from left, min from right)
+    // so that pieces don't pop into existence
     if (layer.isValidSpawnX(-x)) {
+      // edge case: min spawn x appears from the right, spawn to the right
       var valid = true;
-      while (valid && layer.getRelativeX(layer.xSpawnMin) > -x) {
+      while (valid
+        && layer.xSpawnMin !== layer.xSpawnMax
+        && layer.getRelativeX(layer.xSpawnMin) >= -x + rvs.width)
+      {
+        valid = layer.spawnPieceRight();
+      }
+
+      // edge case: max spawn x appears from the left, spawn to the left
+      valid = true;
+      while (valid
+        && layer.xSpawnMin !== layer.xSpawnMax
+        && layer.getRelativeX(layer.xSpawnMax) <= -x)
+      {
         valid = layer.spawnPieceLeft();
       }
 
+      // normal case: max spawn x appears from the right, spawn to the right
       valid = true;
-      while (valid && layer.getRelativeX(layer.xSpawnMax) < -x + rvs.width) {
+      while (valid && layer.getRelativeX(layer.xSpawnMax) <= -x + rvs.width) {
         valid = layer.spawnPieceRight();
+      }
+
+      // normal case: min spawn x appears from the left, spawn to the left
+      valid = true;
+      while (valid && layer.getRelativeX(layer.xSpawnMin) >= -x) {
+        valid = layer.spawnPieceLeft();
       }
     }
   };
@@ -223,15 +246,38 @@ var Parallax = exports = Class(function () {
     }
 
     // spawn pieces about to appear on the top or bottom
+    // NOTE: the order of the following while loops matters!
+    // we handle unexpected directions first (max from top, min from bottom)
+    // so that pieces don't pop into existence
     if (layer.isValidSpawnY(-y)) {
+      // edge case: min spawn y appears from the bottom, spawn downward
       var valid = true;
-      while (valid && layer.getRelativeY(layer.ySpawnMin) > -y) {
+      while (valid
+        && layer.ySpawnMin !== layer.ySpawnMax
+        && layer.getRelativeY(layer.ySpawnMin) >= -y + rvs.height)
+      {
+        valid = layer.spawnPieceDown();
+      }
+
+      // edge case: max spawn y appears from the top, spawn upward
+      valid = true;
+      while (valid
+        && layer.ySpawnMin !== layer.ySpawnMax
+        && layer.getRelativeY(layer.ySpawnMax) <= -y)
+      {
         valid = layer.spawnPieceUp();
       }
 
+      // normal case: max spawn y appears from the bottom, spawn downard
       valid = true;
-      while (valid && layer.getRelativeY(layer.ySpawnMax) < -y + rvs.height) {
+      while (valid && layer.getRelativeY(layer.ySpawnMax) <= -y + rvs.height) {
         valid = layer.spawnPieceDown();
+      }
+
+      // normal case: min spawn y appears from the top, spawn upward
+      valid = true;
+      while (valid && layer.getRelativeY(layer.ySpawnMin) >= -y) {
+        valid = layer.spawnPieceUp();
       }
     }
   };

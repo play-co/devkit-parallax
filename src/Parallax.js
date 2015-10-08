@@ -170,7 +170,8 @@ var Parallax = exports = Class(function () {
       var valid = true;
       while (valid
         && layer.xSpawnMin !== layer.xSpawnMax
-        && layer.getRelativeX(layer.xSpawnMin) >= -x + rvs.width)
+        && (layer.getRelativeX(layer.xSpawnMin) <= -x + rvs.width
+          && layer.getRelativeX(layer.xSpawnMin) > -(x - dx) + rvs.width))
       {
         valid = layer.spawnPieceRight();
       }
@@ -179,7 +180,8 @@ var Parallax = exports = Class(function () {
       valid = true;
       while (valid
         && layer.xSpawnMin !== layer.xSpawnMax
-        && layer.getRelativeX(layer.xSpawnMax) <= -x)
+        && (layer.getRelativeX(layer.xSpawnMax) >= -x
+          && layer.getRelativeX(layer.xSpawnMax) < -(x - dx)))
       {
         valid = layer.spawnPieceLeft();
       }
@@ -254,7 +256,8 @@ var Parallax = exports = Class(function () {
       var valid = true;
       while (valid
         && layer.ySpawnMin !== layer.ySpawnMax
-        && layer.getRelativeY(layer.ySpawnMin) >= -y + rvs.height)
+        && (layer.getRelativeY(layer.ySpawnMin) <= -y + rvs.height
+          && layer.getRelativeY(layer.ySpawnMin) > -(y - dy) + rvs.height))
       {
         valid = layer.spawnPieceDown();
       }
@@ -263,7 +266,8 @@ var Parallax = exports = Class(function () {
       valid = true;
       while (valid
         && layer.ySpawnMin !== layer.ySpawnMax
-        && layer.getRelativeY(layer.ySpawnMax) <= -y)
+        && (layer.getRelativeY(layer.ySpawnMax) >= -y
+          && layer.getRelativeY(layer.ySpawnMax) < -(y - dy)))
       {
         valid = layer.spawnPieceUp();
       }
@@ -355,12 +359,13 @@ var LayerView = exports.LayerView = Class(View, function () {
     this.xPosition = 0;
     this.xVelocity = config.xVelocity || 0;
 
+    var gapX = this.getGapX();
     if (config.xLimitMin !== void 0) {
       this.xLimitMin = config.xLimitMin;
       this.xSpawnMin = config.xLimitMin;
     } else {
       this.xLimitMin = -Number.MAX_VALUE;
-      this.xSpawnMin = -this.getGapX();
+      this.xSpawnMin = -gapX / 2;
     }
 
     if (config.xLimitMax !== void 0) {
@@ -368,7 +373,7 @@ var LayerView = exports.LayerView = Class(View, function () {
       this.xSpawnMax = config.xLimitMax;
     } else {
       this.xLimitMax = Number.MAX_VALUE;
-      this.xSpawnMax = this.getGapX();
+      this.xSpawnMax = gapX / 2;
     }
 
     this.xLimitMin = min(this.xLimitMin, this.xLimitMax);
@@ -386,12 +391,13 @@ var LayerView = exports.LayerView = Class(View, function () {
     this.yPosition = 0;
     this.yVelocity = config.yVelocity || 0;
 
+    var gapY = this.getGapY();
     if (config.yLimitMin !== void 0) {
       this.yLimitMin = config.yLimitMin;
       this.ySpawnMin = config.yLimitMin;
     } else {
       this.yLimitMin = -Number.MAX_VALUE;
-      this.ySpawnMin = -this.getGapY();
+      this.ySpawnMin = -gapY / 2;
     }
 
     if (config.yLimitMax !== void 0) {
@@ -399,7 +405,7 @@ var LayerView = exports.LayerView = Class(View, function () {
       this.ySpawnMax = config.yLimitMax;
     } else {
       this.yLimitMax = Number.MAX_VALUE;
-      this.ySpawnMax = this.getGapY();
+      this.ySpawnMax = gapY / 2;
     }
 
     this.yLimitMin = min(this.yLimitMin, this.yLimitMax);

@@ -510,8 +510,8 @@ var LayerView = exports.LayerView = Class(View, function () {
       this.alignPieceX(piece, pieceData);
       this.alignPieceY(piece, pieceData);
       this.pieces.unshift(piece);
-      this.updateSpawnX(piece);
-      this.yCanSpawn && this.updateSpawnY(piece);
+      this.updateSpawnX(piece, -1);
+      this.yCanSpawn && this.updateSpawnY(piece, 0);
       this.spawnCount--;
       return true;
     } else {
@@ -545,8 +545,8 @@ var LayerView = exports.LayerView = Class(View, function () {
       this.alignPieceX(piece, pieceData);
       this.alignPieceY(piece, pieceData);
       this.pieces.push(piece);
-      this.updateSpawnX(piece);
-      this.yCanSpawn && this.updateSpawnY(piece);
+      this.updateSpawnX(piece, 1);
+      this.yCanSpawn && this.updateSpawnY(piece, 0);
       this.spawnCount--;
       return true;
     } else {
@@ -580,8 +580,8 @@ var LayerView = exports.LayerView = Class(View, function () {
       this.alignPieceX(piece, pieceData);
       this.alignPieceY(piece, pieceData);
       this.pieces.unshift(piece);
-      this.updateSpawnY(piece);
-      this.xCanSpawn && this.updateSpawnX(piece);
+      this.updateSpawnY(piece, -1);
+      this.xCanSpawn && this.updateSpawnX(piece, 0);
       this.spawnCount--;
       return true;
     } else {
@@ -615,8 +615,8 @@ var LayerView = exports.LayerView = Class(View, function () {
       this.alignPieceX(piece, pieceData);
       this.alignPieceY(piece, pieceData);
       this.pieces.push(piece);
-      this.updateSpawnY(piece);
-      this.xCanSpawn && this.updateSpawnX(piece);
+      this.updateSpawnY(piece, 1);
+      this.xCanSpawn && this.updateSpawnX(piece, 0);
       this.spawnCount--;
       return true;
     } else {
@@ -679,25 +679,41 @@ var LayerView = exports.LayerView = Class(View, function () {
     }
   };
 
-  this.updateSpawnX = function (piece) {
+  this.updateSpawnX = function (piece, direction) {
     var pxMin = this.getMinPieceX(piece);
-    if (pxMin <= this.xSpawnMin) {
-      this.xSpawnMin = pxMin - this.getGapX();
-    }
     var pxMax = this.getMaxPieceX(piece);
-    if (pxMax >= this.xSpawnMax) {
+    if (!direction) {
+      if (pxMin <= this.xSpawnMin) {
+        this.xSpawnMin = pxMin - this.getGapX();
+      }
+      if (pxMax >= this.xSpawnMax) {
+        this.xSpawnMax = pxMax + this.getGapX();
+      }
+    } else if (direction === 1) {
+      pxMax = max(pxMax, this.xSpawnMax);
       this.xSpawnMax = pxMax + this.getGapX();
+    } else if (direction === -1) {
+      pxMin = min(pxMin, this.xSpawnMin);
+      this.xSpawnMin = pxMin - this.getGapX();
     }
   };
 
-  this.updateSpawnY = function (piece) {
+  this.updateSpawnY = function (piece, direction) {
     var pyMin = this.getMinPieceY(piece);
-    if (pyMin <= this.ySpawnMin) {
-      this.ySpawnMin = pyMin - this.getGapY();
-    }
     var pyMax = this.getMaxPieceY(piece);
-    if (pyMax >= this.ySpawnMax) {
+    if (!direction) {
+      if (pyMin <= this.ySpawnMin) {
+        this.ySpawnMin = pyMin - this.getGapY();
+      }
+      if (pyMax >= this.ySpawnMax) {
+        this.ySpawnMax = pyMax + this.getGapY();
+      }
+    } else if (direction === 1) {
+      pyMax = max(pyMax, this.ySpawnMax);
       this.ySpawnMax = pyMax + this.getGapY();
+    } else if (direction === -1) {
+      pyMin = min(pyMin, this.ySpawnMin);
+      this.ySpawnMin = pyMin - this.getGapY();
     }
   };
 

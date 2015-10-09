@@ -125,7 +125,11 @@ var Parallax = exports = Class(function () {
     var pieces = layer.pieces;
 
     // stop the layer if bounded by finite spawned pieces
-    if (layer.spawnBounded && !layer.spawnCount && pieces.length) {
+    if (layer.spawnBounded
+      && !layer.spawnCount
+      && layer.xCanSpawn
+      && pieces.length)
+    {
       if (layer.getRelativeX(layer.xSpawnMin) > -x) {
         x = layer.style.x -= layer.getRelativeX(layer.xSpawnMin) + x;
       } else if (layer.getRelativeX(layer.xSpawnMax) < -x + rvs.width) {
@@ -211,7 +215,11 @@ var Parallax = exports = Class(function () {
     var pieces = layer.pieces;
 
     // stop the layer if bounded by finite spawned pieces
-    if (layer.spawnBounded && !layer.spawnCount && pieces.length) {
+    if (layer.spawnBounded
+      && !layer.spawnCount
+      && layer.yCanSpawn
+      && pieces.length)
+    {
       if (layer.getRelativeY(layer.ySpawnMin) > -y) {
         y = layer.style.y -= layer.getRelativeY(layer.ySpawnMin) + y;
       } else if (layer.getRelativeY(layer.ySpawnMax) < -y + rvs.height) {
@@ -362,7 +370,7 @@ var LayerView = exports.LayerView = Class(View, function () {
     var gapX = this.getGapX();
     if (config.xLimitMin !== void 0) {
       this.xLimitMin = config.xLimitMin;
-      this.xSpawnMin = config.xLimitMin;
+      this.xSpawnMin = config.xLimitMin + gapX / 2;
     } else {
       this.xLimitMin = -Number.MAX_VALUE;
       this.xSpawnMin = -gapX / 2;
@@ -370,7 +378,7 @@ var LayerView = exports.LayerView = Class(View, function () {
 
     if (config.xLimitMax !== void 0) {
       this.xLimitMax = config.xLimitMax;
-      this.xSpawnMax = config.xLimitMax;
+      this.xSpawnMax = config.xLimitMax - gapX / 2;
     } else {
       this.xLimitMax = Number.MAX_VALUE;
       this.xSpawnMax = gapX / 2;
@@ -394,7 +402,7 @@ var LayerView = exports.LayerView = Class(View, function () {
     var gapY = this.getGapY();
     if (config.yLimitMin !== void 0) {
       this.yLimitMin = config.yLimitMin;
-      this.ySpawnMin = config.yLimitMin;
+      this.ySpawnMin = config.yLimitMin + gapY / 2;
     } else {
       this.yLimitMin = -Number.MAX_VALUE;
       this.ySpawnMin = -gapY / 2;
@@ -402,7 +410,7 @@ var LayerView = exports.LayerView = Class(View, function () {
 
     if (config.yLimitMax !== void 0) {
       this.yLimitMax = config.yLimitMax;
-      this.ySpawnMax = config.yLimitMax;
+      this.ySpawnMax = config.yLimitMax - gapY / 2;
     } else {
       this.yLimitMax = Number.MAX_VALUE;
       this.ySpawnMax = gapY / 2;

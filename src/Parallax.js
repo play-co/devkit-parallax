@@ -691,6 +691,7 @@ var LayerView = exports.LayerView = Class(View, function () {
     var pxMin = this.getMinPieceX(piece);
     var pxMax = this.getMaxPieceX(piece);
     if (!direction) {
+      // we're not moving horizontally
       if (pxMin <= this.xSpawnMin) {
         this.xSpawnMin = pxMin - this.getGapX();
       }
@@ -698,11 +699,17 @@ var LayerView = exports.LayerView = Class(View, function () {
         this.xSpawnMax = pxMax + this.getGapX();
       }
     } else if (direction === 1) {
+      // we're moving to the right so add a gap to the right
+      pxMin = min(pxMin, this.xSpawnMin);
       pxMax = max(pxMax, this.xSpawnMax);
+      this.xSpawnMin = pxMin;
       this.xSpawnMax = pxMax + this.getGapX();
     } else if (direction === -1) {
+      // we're moving left so add a gap to the left
       pxMin = min(pxMin, this.xSpawnMin);
+      pxMax = max(pxMax, this.xSpawnMax);
       this.xSpawnMin = pxMin - this.getGapX();
+      this.xSpawnMax = pxMax;
     }
   };
 
@@ -710,6 +717,7 @@ var LayerView = exports.LayerView = Class(View, function () {
     var pyMin = this.getMinPieceY(piece);
     var pyMax = this.getMaxPieceY(piece);
     if (!direction) {
+      // we're not moving vertically
       if (pyMin <= this.ySpawnMin) {
         this.ySpawnMin = pyMin - this.getGapY();
       }
@@ -717,11 +725,17 @@ var LayerView = exports.LayerView = Class(View, function () {
         this.ySpawnMax = pyMax + this.getGapY();
       }
     } else if (direction === 1) {
+      // we're moving down, so only add a gap downward
+      pyMin = min(pyMin, this.ySpawnMin);
       pyMax = max(pyMax, this.ySpawnMax);
+      this.ySpawnMin = pyMin;
       this.ySpawnMax = pyMax + this.getGapY();
     } else if (direction === -1) {
+      // we're moving up, so only add a gap upward
       pyMin = min(pyMin, this.ySpawnMin);
+      pyMax = max(pyMax, this.ySpawnMax);
       this.ySpawnMin = pyMin - this.getGapY();
+      this.ySpawnMax = pyMax;
     }
   };
 

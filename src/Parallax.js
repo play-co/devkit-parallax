@@ -502,19 +502,28 @@ var LayerView = exports.LayerView = Class(View, function () {
       && this.isValidSpawnX(this.xSpawnMin))
     {
       var piece = this.addPiece(data);
-      var x = pieceData.x || 0;
-      var y = pieceData.y !== void 0
-        ? pieceData.y
-        : rollInt(this.ySpawnMin, this.ySpawnMax);
       var ps = piece.style;
-      var sx = ps.scale * ps.scaleX;
-      var sy = ps.scale * ps.scaleY;
-      var xCorrection = (1 - sx) * ps.anchorX;
-      var yCorrection = (1 - sy) * ps.anchorY;
+      ps.x = 0;
+      ps.y = 0;
       piece.index = index;
-      ps.x = this.xSpawnMin + x - pieceData.width * sx - xCorrection;
-      ps.y = y - yCorrection;
       this.applyStyleRanges(piece, pieceData);
+
+      if (ps.x === 0) {
+        var x = pieceData.x || 0;
+        var sx = ps.scale * ps.scaleX;
+        var xCorrection = (1 - sx) * ps.anchorX;
+        ps.x = this.xSpawnMin + x - pieceData.width * sx - xCorrection;
+      }
+
+      if (ps.y === 0) {
+        var y = pieceData.y !== void 0
+          ? pieceData.y
+          : rollInt(this.ySpawnMin, this.ySpawnMax);
+        var sy = ps.scale * ps.scaleY;
+        var yCorrection = (1 - sy) * ps.anchorY;
+        ps.y = y - yCorrection;
+      }
+
       this.alignPieceX(piece, pieceData);
       this.alignPieceY(piece, pieceData);
       this.pieces.unshift(piece);
@@ -537,19 +546,28 @@ var LayerView = exports.LayerView = Class(View, function () {
       && this.isValidSpawnX(this.xSpawnMax))
     {
       var piece = this.addPiece(data);
-      var x = pieceData.x || 0;
-      var y = pieceData.y !== void 0
-        ? pieceData.y
-        : rollInt(this.ySpawnMin, this.ySpawnMax);
       var ps = piece.style;
-      var sx = ps.scale * ps.scaleX;
-      var sy = ps.scale * ps.scaleY;
-      var xCorrection = (1 - sx) * ps.anchorX;
-      var yCorrection = (1 - sy) * ps.anchorY;
+      ps.x = 0;
+      ps.y = 0;
       piece.index = index;
-      ps.x = this.xSpawnMax + x - xCorrection;
-      ps.y = y - yCorrection;
       this.applyStyleRanges(piece, pieceData);
+
+      if (ps.x === 0) {
+        var x = pieceData.x || 0;
+        var sx = ps.scale * ps.scaleX;
+        var xCorrection = (1 - sx) * ps.anchorX;
+        ps.x = this.xSpawnMax + x - xCorrection;
+      }
+
+      if (ps.y === 0) {
+        var y = pieceData.y !== void 0
+          ? pieceData.y
+          : rollInt(this.ySpawnMin, this.ySpawnMax);
+        var sy = ps.scale * ps.scaleY;
+        var yCorrection = (1 - sy) * ps.anchorY;
+        ps.y = y - yCorrection;
+      }
+
       this.alignPieceX(piece, pieceData);
       this.alignPieceY(piece, pieceData);
       this.pieces.push(piece);
@@ -572,19 +590,28 @@ var LayerView = exports.LayerView = Class(View, function () {
       && this.isValidSpawnY(this.ySpawnMin))
     {
       var piece = this.addPiece(data);
-      var x = pieceData.x !== void 0
-        ? pieceData.x
-        : rollInt(this.xSpawnMin, this.xSpawnMax);
-      var y = pieceData.y || 0;
       var ps = piece.style;
-      var sx = ps.scale * ps.scaleX;
-      var sy = ps.scale * ps.scaleY;
-      var xCorrection = (1 - sx) * ps.anchorX;
-      var yCorrection = (1 - sy) * ps.anchorY;
+      ps.x = 0;
+      ps.y = 0;
       piece.index = index;
-      ps.x = x - xCorrection;
-      ps.y = this.ySpawnMin + y - pieceData.height * sy - yCorrection;
       this.applyStyleRanges(piece, pieceData);
+
+      if (ps.x === 0) {
+        var x = pieceData.x !== void 0
+          ? pieceData.x
+          : rollInt(this.xSpawnMin, this.xSpawnMax);
+        var sx = ps.scale * ps.scaleX;
+        var xCorrection = (1 - sx) * ps.anchorX;
+        ps.x = x - xCorrection;
+      }
+
+      if (ps.y === 0) {
+        var y = pieceData.y || 0;
+        var sy = ps.scale * ps.scaleY;
+        var yCorrection = (1 - sy) * ps.anchorY;
+        ps.y = this.ySpawnMin + y - pieceData.height * sy - yCorrection;
+      }
+
       this.alignPieceX(piece, pieceData);
       this.alignPieceY(piece, pieceData);
       this.pieces.unshift(piece);
@@ -607,19 +634,28 @@ var LayerView = exports.LayerView = Class(View, function () {
       && this.isValidSpawnY(this.ySpawnMax))
     {
       var piece = this.addPiece(data);
-      var x = pieceData.x !== void 0
-        ? pieceData.x
-        : rollInt(this.xSpawnMin, this.xSpawnMax);
-      var y = pieceData.y || 0;
       var ps = piece.style;
-      var sx = ps.scale * ps.scaleX;
-      var sy = ps.scale * ps.scaleY;
-      var xCorrection = (1 - sx) * ps.anchorX;
-      var yCorrection = (1 - sy) * ps.anchorY;
+      ps.x = 0;
+      ps.y = 0;
       piece.index = index;
-      ps.x = x - xCorrection;
-      ps.y = this.ySpawnMax + y - yCorrection;
       this.applyStyleRanges(piece, pieceData);
+
+      if (ps.x === 0) {
+        var x = pieceData.x !== void 0
+          ? pieceData.x
+          : rollInt(this.xSpawnMin, this.xSpawnMax);
+        var sx = ps.scale * ps.scaleX;
+        var xCorrection = (1 - sx) * ps.anchorX;
+        ps.x = x - xCorrection;
+      }
+
+      if (ps.y === 0) {
+        var y = pieceData.y || 0;
+        var sy = ps.scale * ps.scaleY;
+        var yCorrection = (1 - sy) * ps.anchorY;
+        ps.y = this.ySpawnMax + y - yCorrection;
+      }
+
       this.alignPieceX(piece, pieceData);
       this.alignPieceY(piece, pieceData);
       this.pieces.push(piece);

@@ -526,6 +526,12 @@ var LayerView = exports.LayerView = Class(View, function () {
 
       this.alignPieceX(piece, pieceData);
       this.alignPieceY(piece, pieceData);
+
+      if (!this.isValidSpawnY(ps.y)) {
+        this.piecePool.releaseView(piece);
+        return false;
+      }
+
       this.pieces.unshift(piece);
       this.updateSpawnX(piece, -1);
       this.yCanSpawn && this.updateSpawnY(piece, 0);
@@ -570,6 +576,12 @@ var LayerView = exports.LayerView = Class(View, function () {
 
       this.alignPieceX(piece, pieceData);
       this.alignPieceY(piece, pieceData);
+
+      if (!this.isValidSpawnY(ps.y)) {
+        this.piecePool.releaseView(piece);
+        return false;
+      }
+
       this.pieces.push(piece);
       this.updateSpawnX(piece, 1);
       this.yCanSpawn && this.updateSpawnY(piece, 0);
@@ -614,6 +626,12 @@ var LayerView = exports.LayerView = Class(View, function () {
 
       this.alignPieceX(piece, pieceData);
       this.alignPieceY(piece, pieceData);
+
+      if (!this.isValidSpawnX(ps.x)) {
+        this.piecePool.releaseView(piece);
+        return false;
+      }
+
       this.pieces.unshift(piece);
       this.updateSpawnY(piece, -1);
       this.xCanSpawn && this.updateSpawnX(piece, 0);
@@ -658,6 +676,12 @@ var LayerView = exports.LayerView = Class(View, function () {
 
       this.alignPieceX(piece, pieceData);
       this.alignPieceY(piece, pieceData);
+
+      if (!this.isValidSpawnX(ps.x)) {
+        this.piecePool.releaseView(piece);
+        return false;
+      }
+
       this.pieces.push(piece);
       this.updateSpawnY(piece, 1);
       this.xCanSpawn && this.updateSpawnX(piece, 0);

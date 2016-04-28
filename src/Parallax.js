@@ -527,7 +527,7 @@ var LayerView = exports.LayerView = Class(View, function () {
       this.alignPieceX(piece, pieceData);
       this.alignPieceY(piece, pieceData);
 
-      if (!this.isValidSpawnY(ps.y)) {
+      if (!this.isInsideLimitsY(ps.y)) {
         this.piecePool.releaseView(piece);
         return false;
       }
@@ -577,7 +577,7 @@ var LayerView = exports.LayerView = Class(View, function () {
       this.alignPieceX(piece, pieceData);
       this.alignPieceY(piece, pieceData);
 
-      if (!this.isValidSpawnY(ps.y)) {
+      if (!this.isInsideLimitsY(ps.y)) {
         this.piecePool.releaseView(piece);
         return false;
       }
@@ -627,7 +627,7 @@ var LayerView = exports.LayerView = Class(View, function () {
       this.alignPieceX(piece, pieceData);
       this.alignPieceY(piece, pieceData);
 
-      if (!this.isValidSpawnX(ps.x)) {
+      if (!this.isInsideLimitsX(ps.x)) {
         this.piecePool.releaseView(piece);
         return false;
       }
@@ -677,7 +677,7 @@ var LayerView = exports.LayerView = Class(View, function () {
       this.alignPieceX(piece, pieceData);
       this.alignPieceY(piece, pieceData);
 
-      if (!this.isValidSpawnX(ps.x)) {
+      if (!this.isInsideLimitsX(ps.x)) {
         this.piecePool.releaseView(piece);
         return false;
       }
@@ -832,11 +832,19 @@ var LayerView = exports.LayerView = Class(View, function () {
   };
 
   this.isValidSpawnX = function (x) {
-    return this.xCanSpawn && x >= this.xLimitMin && x <= this.xLimitMax;
+    return this.xCanSpawn && this.isInsideLimitsX(x);
   };
 
   this.isValidSpawnY = function (y) {
-    return this.yCanSpawn && y >= this.yLimitMin && y <= this.yLimitMax;
+    return this.yCanSpawn && this.isInsideLimitsY(y);
+  };
+
+  this.isInsideLimitsX = function (x) {
+    return x >= this.xLimitMin && x <= this.xLimitMax;
+  };
+
+  this.isInsideLimitsY = function (y) {
+    return y >= this.yLimitMin && y <= this.yLimitMax;
   };
 
   this.setScale = function (scale) {

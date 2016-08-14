@@ -462,8 +462,8 @@ var LayerView = exports.LayerView = Class(View, function () {
     pieceData.r = data.r || 0;
 
     var b = pieceData.img.getBounds();
-    pieceData.width = data.width || b.width + b.marginLeft + b.marginRight;
-    pieceData.height = data.height || b.height + b.marginTop + b.marginBottom;
+    pieceData.width = data.width || (b.width + b.marginLeft + b.marginRight) / b.scale;
+    pieceData.height = data.height || (b.height + b.marginTop + b.marginBottom) / b.scale;
     pieceData.anchorX = data.anchorX || pieceData.width / 2;
     pieceData.anchorY = data.anchorY || pieceData.height / 2;
     pieceData.scale = data.scale !== void 0 ? data.scale : 1;

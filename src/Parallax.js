@@ -2,6 +2,7 @@ import ui.View as View;
 import ui.ImageView as ImageView;
 import ui.resource.Image as Image;
 import ui.ViewPool as ViewPool;
+import performance;
 
 // math and random utilities
 var min = Math.min;
@@ -352,6 +353,8 @@ var LayerView = exports.LayerView = Class(View, function () {
 
   this.reset = function (config, index) {
     var superview = this.getSuperview();
+
+    this.performanceCutoff = config.performanceCutoff;
     this.style.width = superview.style.width;
     this.style.height = superview.style.height;
     this.style.anchorX = this.style.width / 2;
@@ -833,6 +836,14 @@ var LayerView = exports.LayerView = Class(View, function () {
   this.getRelativeY = function (y) {
     var s = this.style;
     return s.scale * (y - s.anchorY) + s.anchorY;
+  };
+
+  this.spawnAllowedByPerformance = function () {
+    if (!this.performanceCutoff) {
+      return true;
+    }
+
+    return performance.getPerformanceScore() > this.performanceCutoff;
   };
 });
 

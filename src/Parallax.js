@@ -496,6 +496,9 @@ var LayerView = exports.LayerView = Class(View, function () {
   };
 
   this.spawnPieceLeft = function () {
+    if (!this.spawnAllowedByPerformance()) {
+      return false;
+    }
     var index = this.getNextPieceIndex(-1);
     var data = this.pieceOptions[index];
     var pieceData = pieceCache[data.id];
@@ -540,6 +543,9 @@ var LayerView = exports.LayerView = Class(View, function () {
   };
 
   this.spawnPieceRight = function () {
+    if (!this.spawnAllowedByPerformance()) {
+      return false;
+    }
     var index = this.getNextPieceIndex(1);
     var data = this.pieceOptions[index];
     var pieceData = pieceCache[data.id];
@@ -584,6 +590,9 @@ var LayerView = exports.LayerView = Class(View, function () {
   };
 
   this.spawnPieceUp = function () {
+    if (!this.spawnAllowedByPerformance()) {
+      return false;
+    }
     var index = this.getNextPieceIndex(-1);
     var data = this.pieceOptions[index];
     var pieceData = pieceCache[data.id];
@@ -628,6 +637,9 @@ var LayerView = exports.LayerView = Class(View, function () {
   };
 
   this.spawnPieceDown = function () {
+    if (!this.spawnAllowedByPerformance()) {
+      return false;
+    }
     var index = this.getNextPieceIndex(1);
     var data = this.pieceOptions[index];
     var pieceData = pieceCache[data.id];

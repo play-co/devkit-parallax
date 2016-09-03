@@ -496,16 +496,14 @@ var LayerView = exports.LayerView = Class(View, function () {
   };
 
   this.spawnPieceLeft = function () {
-    if (!this.spawnAllowedByPerformance()) {
-      return false;
-    }
     var index = this.getNextPieceIndex(-1);
     var data = this.pieceOptions[index];
     var pieceData = pieceCache[data.id];
     if (validateSpawn()
       && pieceData
       && this.spawnCount > 0
-      && this.isValidSpawnX(this.xSpawnMin))
+      && this.isValidSpawnX(this.xSpawnMin)
+      && this.spawnAllowedByPerformance())
     {
       var piece = this.addPiece(data);
       var ps = piece.style;
@@ -543,16 +541,14 @@ var LayerView = exports.LayerView = Class(View, function () {
   };
 
   this.spawnPieceRight = function () {
-    if (!this.spawnAllowedByPerformance()) {
-      return false;
-    }
     var index = this.getNextPieceIndex(1);
     var data = this.pieceOptions[index];
     var pieceData = pieceCache[data.id];
     if (validateSpawn()
       && pieceData
       && this.spawnCount > 0
-      && this.isValidSpawnX(this.xSpawnMax))
+      && this.isValidSpawnX(this.xSpawnMax)
+      && this.spawnAllowedByPerformance())
     {
       var piece = this.addPiece(data);
       var ps = piece.style;
@@ -590,16 +586,14 @@ var LayerView = exports.LayerView = Class(View, function () {
   };
 
   this.spawnPieceUp = function () {
-    if (!this.spawnAllowedByPerformance()) {
-      return false;
-    }
     var index = this.getNextPieceIndex(-1);
     var data = this.pieceOptions[index];
     var pieceData = pieceCache[data.id];
     if (validateSpawn()
       && pieceData
       && this.spawnCount > 0
-      && this.isValidSpawnY(this.ySpawnMin))
+      && this.isValidSpawnY(this.ySpawnMin)
+      && this.spawnAllowedByPerformance())
     {
       var piece = this.addPiece(data);
       var ps = piece.style;
@@ -637,16 +631,14 @@ var LayerView = exports.LayerView = Class(View, function () {
   };
 
   this.spawnPieceDown = function () {
-    if (!this.spawnAllowedByPerformance()) {
-      return false;
-    }
     var index = this.getNextPieceIndex(1);
     var data = this.pieceOptions[index];
     var pieceData = pieceCache[data.id];
     if (validateSpawn()
       && pieceData
       && this.spawnCount > 0
-      && this.isValidSpawnY(this.ySpawnMax))
+      && this.isValidSpawnY(this.ySpawnMax)
+      && this.spawnAllowedByPerformance())
     {
       var piece = this.addPiece(data);
       var ps = piece.style;

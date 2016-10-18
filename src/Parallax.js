@@ -25,7 +25,7 @@ var rollInt = function (mn, mx) {
 var pieceCache = {};
 
 // the Parallax Class
-var Parallax = exports = Class(function () {
+exports = Class(function () {
   /**
    * init: the constructor function of Parallax
    * ~ accepts an opts object parameter with these optional properties
@@ -302,11 +302,12 @@ var Parallax = exports = Class(function () {
     }, this);
   };
 });
+var Parallax = exports;
 
 
 var _uid = 0;
 // the Parallax Layer Class
-var LayerView = exports.LayerView = Class(View, function (supr) {
+exports.LayerView = Class(View, function (supr) {
   this.init = function (opts) {
     supr(this, 'init', [opts]);
 
@@ -877,6 +878,7 @@ var LayerView = exports.LayerView = Class(View, function (supr) {
     return performance.getPerformanceScore() > this.performanceCutoff;
   };
 });
+var LayerView = exports.LayerView;
 
 /**
  * NOTE: these are helpful if you are debugging or modifying parallax logic;

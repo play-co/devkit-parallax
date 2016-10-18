@@ -305,13 +305,12 @@ var Parallax = exports = Class(function () {
   };
 });
 
-// the Parallax Layer Class
-var LayerView = exports.LayerView = Class(View, function () {
-  var sup = View.prototype;
-  var _uid = 0;
 
+var _uid = 0;
+// the Parallax Layer Class
+var LayerView = exports.LayerView = Class(View, function (supr) {
   this.init = function (opts) {
-    sup.init.call(this, opts);
+    supr(this, 'init', [opts]);
 
     // horizontal properties
     this.xSpawnMin = 0;

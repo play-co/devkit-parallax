@@ -1,3 +1,5 @@
+let exports = {};
+
 import {
   merge,
   logger
@@ -901,3 +903,5 @@ function validateSpawn() {
   return true;
 }
 ;
+
+export default exports;

@@ -1,5 +1,3 @@
-import .Parallax;
+jsio('import .Parallax');
 
-exports = {
-	Parallax: Parallax
-};
+exports = { Parallax: Parallax };

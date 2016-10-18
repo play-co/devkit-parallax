@@ -1,8 +1,8 @@
-jsio('import ui.View as View');
-jsio('import ui.ImageView as ImageView');
-jsio('import ui.resource.Image as Image');
-jsio('import ui.ViewPool as ViewPool');
-jsio('import performance');
+import View from 'ui/View';
+import ImageView from 'ui/ImageView';
+import Image from 'ui/resource/Image';
+import ViewPool from 'ui/ViewPool';
+import performance from 'performance';
 
 // math and random utilities
 var min = Math.min;

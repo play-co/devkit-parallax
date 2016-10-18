@@ -1,3 +1,3 @@
-jsio('import .Parallax');
+import Parallax from './Parallax';
 
 exports = { Parallax: Parallax };

@@ -27,17 +27,8 @@ var rollInt = function (mn, mx) {
 var pieceCache = {};
 
 // the Parallax Class
-exports = Class(function () {
-  /**
-   * init: the constructor function of Parallax
-   * ~ accepts an opts object parameter with these optional properties
-   *     ~ rootView: the parent of all parallax layer views (REQUIRED)
-   *     ~ layerCtor: the constructor used for layers, default is LayerView
-   *     ~ layerInitCount: number of layers to init in the pool, default is 0
-   *     ~ pieceCtor: the constructor used for pieces, default is ImageView
-   *     ~ pieceInitCount: number of pieces to init in the pool, default is 0
-   */
-  this.init = function (opts) {
+exports = class {
+  constructor(opts) {
     // layers' parent: its dimensions determine recycling/spawning of pieces
     this.rootView = opts.rootView || opts.parent || opts.superview;
     // layer views: recycled and initialized from config on reset
@@ -50,22 +41,13 @@ exports = Class(function () {
     // save opts for later
     this._opts = opts;
     this.layerMap = {};
-  };
-
-  /**
-   * reset: prepares the parallax for use based on provided config
-   * ~ see README.md for details on config parameter
-   */
-  this.reset = function (config) {
+  }
+  reset(config) {
     this._time = Date.now();
     this.releaseLayers();
     this.initializeLayers(config);
-  };
-
-  /**
-   * releaseLayers: release all parallax views to their respective pools
-   */
-  this.releaseLayers = function () {
+  }
+  releaseLayers() {
     this.layerMap = {};
     this.layerPool.forEachActiveView(function (layer, i) {
       layer.pieces.length = 0;
@@ -73,13 +55,8 @@ exports = Class(function () {
       layer.piecePool.releaseAllViews();
       this.layerPool.releaseView(layer);
     }, this);
-  };
-
-  /**
-   * initializeLayers: prepare layers based on config for a fresh parallax
-   * ~ see README.md for details on config parameter
-   */
-  this.initializeLayers = function (config) {
+  }
+  initializeLayers(config) {
     for (var i = 0, len = config.length; i < len; i++) {
       var layerOpts = merge({ parent: this.rootView }, this._opts);
       var layer = this.layerPool.obtainView(layerOpts);
@@ -89,22 +66,17 @@ exports = Class(function () {
       this.moveLayerVertically(layer, 0);
       this.layerMap[layer.id] = layer;
     }
-  };
-
-  this.getLayerById = function (id) {
+  }
+  getLayerById(id) {
     return this.layerMap[id];
-  };
-
-  /**
-   * update: should be called once per tick with updated coordinates
-   * ~ x: the horizontal coordinate of the parallax, starts at 0
-   * ~ y: the vertical coordinate of the parallax, starts at 0
-   */
-  this.update = function (x, y, dt) {
+  }
+  update(x, y, dt) {
     var now = Date.now();
     if (dt === void 0) {
       dt = now - this._time;
     }
+
+
 
 
     this.layerPool.forEachActiveView(function (layer, i) {
@@ -125,14 +97,8 @@ exports = Class(function () {
     }, this);
 
     this._time = now;
-  };
-
-  /**
-   * moveLayerHorizontally: updates layer position, spawns and releases pieces
-   * ~ layer: the layer to move
-   * ~ dx: how far to move
-   */
-  this.moveLayerHorizontally = function (layer, dx) {
+  }
+  moveLayerHorizontally(layer, dx) {
     var x = layer.style.x += dx;
     var rvs = this.rootView.style;
     var pieces = layer.pieces;
@@ -145,6 +111,8 @@ exports = Class(function () {
         x = layer.style.x += -x + rvs.width - layer.getRelativeX(layer.xSpawnMax);
       }
     }
+
+
 
 
     // release pieces that have been pushed too far right or left
@@ -164,6 +132,8 @@ exports = Class(function () {
         }
 
 
+
+
         if (!finishedLeft && pieces.length) {
           px = layer.getMaxPieceX(pieces[0]);
           if (layer.getRelativeX(px) <= -x) {
@@ -175,6 +145,8 @@ exports = Class(function () {
         }
       }
     }
+
+
 
 
     // spawn pieces about to appear on the left or right
@@ -189,11 +161,15 @@ exports = Class(function () {
       }
 
 
+
+
       // edge case: max spawn x appears from the left, spawn to the left
       valid = true;
       while (valid && layer.xSpawnMin !== layer.xSpawnMax && (layer.getRelativeX(layer.xSpawnMax) >= -x && layer.getRelativeX(layer.xSpawnMax) < -(x - dx))) {
         valid = layer.spawnPieceLeft();
       }
+
+
 
 
       // normal case: max spawn x appears from the right, spawn to the right
@@ -203,20 +179,16 @@ exports = Class(function () {
       }
 
 
+
+
       // normal case: min spawn x appears from the left, spawn to the left
       valid = true;
       while (valid && layer.getRelativeX(layer.xSpawnMin) >= -x) {
         valid = layer.spawnPieceLeft();
       }
     }
-  };
-
-  /**
-   * moveLayerVertically: updates layer position, spawns and releases pieces
-   * ~ layer: the layer to move
-   * ~ dy: how far to move
-   */
-  this.moveLayerVertically = function (layer, dy) {
+  }
+  moveLayerVertically(layer, dy) {
     var y = layer.style.y += dy;
     var rvs = this.rootView.style;
     var pieces = layer.pieces;
@@ -229,6 +201,8 @@ exports = Class(function () {
         y = layer.style.y += -y + rvs.height - layer.getRelativeY(layer.ySpawnMax);
       }
     }
+
+
 
 
     // release pieces that have been pushed too far down or up
@@ -248,6 +222,8 @@ exports = Class(function () {
         }
 
 
+
+
         if (!finishedUp && pieces.length) {
           py = layer.getMaxPieceY(pieces[0]);
           if (layer.getRelativeY(py) <= -y) {
@@ -259,6 +235,8 @@ exports = Class(function () {
         }
       }
     }
+
+
 
 
     // spawn pieces about to appear on the top or bottom
@@ -273,11 +251,15 @@ exports = Class(function () {
       }
 
 
+
+
       // edge case: max spawn y appears from the top, spawn upward
       valid = true;
       while (valid && layer.ySpawnMin !== layer.ySpawnMax && (layer.getRelativeY(layer.ySpawnMax) >= -y && layer.getRelativeY(layer.ySpawnMax) < -(y - dy))) {
         valid = layer.spawnPieceUp();
       }
+
+
 
 
       // normal case: max spawn y appears from the bottom, spawn downard
@@ -287,31 +269,29 @@ exports = Class(function () {
       }
 
 
+
+
       // normal case: min spawn y appears from the top, spawn upward
       valid = true;
       while (valid && layer.getRelativeY(layer.ySpawnMin) >= -y) {
         valid = layer.spawnPieceUp();
       }
     }
-  };
-
-  /**
-   * setScale: scale the parallax layers, taking into account their scaleMultiplier
-   */
-  this.setScale = function (scale) {
+  }
+  setScale(scale) {
     this.layerPool.forEachActiveView(function (layer, i) {
       layer.setScale(scale);
     }, this);
-  };
-});
+  }
+};
 var Parallax = exports;
 
 
 var _uid = 0;
 // the Parallax Layer Class
-exports.LayerView = Class(View, function (supr) {
-  this.init = function (opts) {
-    supr(this, 'init', [opts]);
+exports.LayerView = class extends View {
+  constructor(opts) {
+    super(opts);
 
     // horizontal properties
     this.xSpawnMin = 0;
@@ -355,9 +335,8 @@ exports.LayerView = Class(View, function (supr) {
       ctor: opts.pieceCtor || ImageView,
       initCount: opts.pieceInitCount || 0
     });
-  };
-
-  this.reset = function (config, index) {
+  }
+  reset(config, index) {
     var superview = this.getSuperview();
 
     this.performanceCutoff = config.performanceCutoff;
@@ -386,6 +365,8 @@ exports.LayerView = Class(View, function (supr) {
     }
 
 
+
+
     if (config.xLimitMax !== void 0) {
       this.xLimitMax = config.xLimitMax;
       this.xSpawnMax = config.xLimitMax - gapX / 2;
@@ -393,6 +374,8 @@ exports.LayerView = Class(View, function (supr) {
       this.xLimitMax = Number.MAX_VALUE;
       this.xSpawnMax = gapX / 2;
     }
+
+
 
 
     this.xLimitMin = min(this.xLimitMin, this.xLimitMax);
@@ -420,6 +403,8 @@ exports.LayerView = Class(View, function (supr) {
     }
 
 
+
+
     if (config.yLimitMax !== void 0) {
       this.yLimitMax = config.yLimitMax;
       this.ySpawnMax = config.yLimitMax - gapY / 2;
@@ -427,6 +412,8 @@ exports.LayerView = Class(View, function (supr) {
       this.yLimitMax = Number.MAX_VALUE;
       this.ySpawnMax = gapY / 2;
     }
+
+
 
 
     this.yLimitMin = min(this.yLimitMin, this.yLimitMax);
@@ -459,9 +446,8 @@ exports.LayerView = Class(View, function (supr) {
       }
       !pieceCache[pieceData.id] && this.cachePieceData(pieceData);
     }
-  };
-
-  this.cachePieceData = function (data) {
+  }
+  cachePieceData(data) {
     var pieceData = {};
     pieceData.img = new Image({ url: data.image });
 
@@ -499,15 +485,16 @@ exports.LayerView = Class(View, function (supr) {
     }
 
 
+
+
     // save the data to our cache only if valid
     if (pieceData.width > 0 && pieceData.height > 0) {
       pieceCache[data.id] = pieceData;
     } else {
       logger.error('Parallax - found an invalid image:', data.image);
     }
-  };
-
-  this.spawnPieceLeft = function () {
+  }
+  spawnPieceLeft() {
     var index = this.getNextPieceIndex(-1);
     var data = this.pieceOptions[index];
     var pieceData = pieceCache[data.id];
@@ -527,12 +514,16 @@ exports.LayerView = Class(View, function (supr) {
       }
 
 
+
+
       if (ps.y === 0) {
         var y = pieceData.y !== void 0 ? pieceData.y : rollInt(this.ySpawnMin, this.ySpawnMax);
         var sy = ps.scale * ps.scaleY;
         var yCorrection = (1 - sy) * ps.anchorY;
         ps.y = y - yCorrection;
       }
+
+
 
 
       this.alignPieceX(piece, pieceData);
@@ -544,6 +535,8 @@ exports.LayerView = Class(View, function (supr) {
       }
 
 
+
+
       this.pieces.unshift(piece);
       this.updateSpawnX(piece, -1);
       this.yCanSpawn && this.updateSpawnY(piece, 0);
@@ -552,9 +545,8 @@ exports.LayerView = Class(View, function (supr) {
     } else {
       return false;
     }
-  };
-
-  this.spawnPieceRight = function () {
+  }
+  spawnPieceRight() {
     var index = this.getNextPieceIndex(1);
     var data = this.pieceOptions[index];
     var pieceData = pieceCache[data.id];
@@ -574,12 +566,16 @@ exports.LayerView = Class(View, function (supr) {
       }
 
 
+
+
       if (ps.y === 0) {
         var y = pieceData.y !== void 0 ? pieceData.y : rollInt(this.ySpawnMin, this.ySpawnMax);
         var sy = ps.scale * ps.scaleY;
         var yCorrection = (1 - sy) * ps.anchorY;
         ps.y = y - yCorrection;
       }
+
+
 
 
       this.alignPieceX(piece, pieceData);
@@ -591,6 +587,8 @@ exports.LayerView = Class(View, function (supr) {
       }
 
 
+
+
       this.pieces.push(piece);
       this.updateSpawnX(piece, 1);
       this.yCanSpawn && this.updateSpawnY(piece, 0);
@@ -599,9 +597,8 @@ exports.LayerView = Class(View, function (supr) {
     } else {
       return false;
     }
-  };
-
-  this.spawnPieceUp = function () {
+  }
+  spawnPieceUp() {
     var index = this.getNextPieceIndex(-1);
     var data = this.pieceOptions[index];
     var pieceData = pieceCache[data.id];
@@ -621,12 +618,16 @@ exports.LayerView = Class(View, function (supr) {
       }
 
 
+
+
       if (ps.y === 0) {
         var y = pieceData.y || 0;
         var sy = ps.scale * ps.scaleY;
         var yCorrection = (1 - sy) * ps.anchorY;
         ps.y = this.ySpawnMin + y - pieceData.height * sy - yCorrection;
       }
+
+
 
 
       this.alignPieceX(piece, pieceData);
@@ -638,6 +639,8 @@ exports.LayerView = Class(View, function (supr) {
       }
 
 
+
+
       this.pieces.unshift(piece);
       this.updateSpawnY(piece, -1);
       this.xCanSpawn && this.updateSpawnX(piece, 0);
@@ -646,9 +649,8 @@ exports.LayerView = Class(View, function (supr) {
     } else {
       return false;
     }
-  };
-
-  this.spawnPieceDown = function () {
+  }
+  spawnPieceDown() {
     var index = this.getNextPieceIndex(1);
     var data = this.pieceOptions[index];
     var pieceData = pieceCache[data.id];
@@ -668,12 +670,16 @@ exports.LayerView = Class(View, function (supr) {
       }
 
 
+
+
       if (ps.y === 0) {
         var y = pieceData.y || 0;
         var sy = ps.scale * ps.scaleY;
         var yCorrection = (1 - sy) * ps.anchorY;
         ps.y = this.ySpawnMax + y - yCorrection;
       }
+
+
 
 
       this.alignPieceX(piece, pieceData);
@@ -685,6 +691,8 @@ exports.LayerView = Class(View, function (supr) {
       }
 
 
+
+
       this.pieces.push(piece);
       this.updateSpawnY(piece, 1);
       this.xCanSpawn && this.updateSpawnX(piece, 0);
@@ -693,9 +701,8 @@ exports.LayerView = Class(View, function (supr) {
     } else {
       return false;
     }
-  };
-
-  this.getNextPieceIndex = function (deltaIndex) {
+  }
+  getNextPieceIndex(deltaIndex) {
     var pieces = this.pieces;
     var options = this.pieceOptions;
     var maxIndex = options.length - 1;
@@ -711,9 +718,8 @@ exports.LayerView = Class(View, function (supr) {
     } else {
       return rollInt(0, maxIndex);
     }
-  };
-
-  this.addPiece = function (data) {
+  }
+  addPiece(data) {
     var piece = this.piecePool.obtainView({ parent: this });
     var pieceData = pieceCache[data.id];
     piece.updateOpts(pieceData);
@@ -724,33 +730,29 @@ exports.LayerView = Class(View, function (supr) {
       piece.setImage(pieceData.img);
     }
     return piece;
-  };
-
-  this.applyStyleRanges = function (piece, pieceData) {
+  }
+  applyStyleRanges(piece, pieceData) {
     var ranges = pieceData.styleRanges;
     for (var i = 0; i < ranges.length; i++) {
       var range = ranges[i];
       piece.style[range[0]] = rollFloat(range[1], range[2]);
     }
-  };
-
-  this.alignPieceX = function (piece, pieceData) {
+  }
+  alignPieceX(piece, pieceData) {
     if (pieceData.xAlign === 'center') {
       piece.style.x -= piece.style.width / 2;
     } else if (pieceData.xAlign === 'right') {
       piece.style.x -= piece.style.width;
     }
-  };
-
-  this.alignPieceY = function (piece, pieceData) {
+  }
+  alignPieceY(piece, pieceData) {
     if (pieceData.yAlign === 'center') {
       piece.style.y -= piece.style.height / 2;
     } else if (pieceData.yAlign === 'bottom') {
       piece.style.y -= piece.style.height;
     }
-  };
-
-  this.updateSpawnX = function (piece, direction) {
+  }
+  updateSpawnX(piece, direction) {
     var pxMin = this.getMinPieceX(piece);
     var pxMax = this.getMaxPieceX(piece);
     if (!direction) {
@@ -774,9 +776,8 @@ exports.LayerView = Class(View, function (supr) {
       this.xSpawnMin = pxMin - this.getGapX();
       this.xSpawnMax = pxMax;
     }
-  };
-
-  this.updateSpawnY = function (piece, direction) {
+  }
+  updateSpawnY(piece, direction) {
     var pyMin = this.getMinPieceY(piece);
     var pyMax = this.getMaxPieceY(piece);
     if (!direction) {
@@ -800,86 +801,76 @@ exports.LayerView = Class(View, function (supr) {
       this.ySpawnMin = pyMin - this.getGapY();
       this.ySpawnMax = pyMax;
     }
-  };
-
-  this.getMinPieceX = function (piece) {
+  }
+  getMinPieceX(piece) {
     var ps = piece.style;
     var scale = ps.scale * ps.scaleX;
     return ps.x + ps.offsetX + (1 - scale) * ps.anchorX;
-  };
-
-  this.getMaxPieceX = function (piece) {
+  }
+  getMaxPieceX(piece) {
     var ps = piece.style;
     var scale = ps.scale * ps.scaleX;
     return ps.x + ps.offsetX + (1 - scale) * ps.anchorX + scale * ps.width;
-  };
-
-  this.getMinPieceY = function (piece) {
+  }
+  getMinPieceY(piece) {
     var ps = piece.style;
     var scale = ps.scale * ps.scaleY;
     return ps.y + ps.offsetY + (1 - scale) * ps.anchorY;
-  };
-
-  this.getMaxPieceY = function (piece) {
+  }
+  getMaxPieceY(piece) {
     var ps = piece.style;
     var scale = ps.scale * ps.scaleY;
     return ps.y + ps.offsetY + (1 - scale) * ps.anchorY + scale * ps.height;
-  };
-
-  this.getGapX = function () {
+  }
+  getGapX() {
     return rollInt(this.xGapRange[0], this.xGapRange[1]);
-  };
-
-  this.getGapY = function () {
+  }
+  getGapY() {
     return rollInt(this.yGapRange[0], this.yGapRange[1]);
-  };
-
-  this.isValidSpawnX = function (x) {
+  }
+  isValidSpawnX(x) {
     return this.xCanSpawn && this.isInsideLimitsX(x);
-  };
-
-  this.isValidSpawnY = function (y) {
+  }
+  isValidSpawnY(y) {
     return this.yCanSpawn && this.isInsideLimitsY(y);
-  };
-
-  this.isInsideLimitsX = function (x) {
+  }
+  isInsideLimitsX(x) {
     return x >= this.xLimitMin && x <= this.xLimitMax;
-  };
-
-  this.isInsideLimitsY = function (y) {
+  }
+  isInsideLimitsY(y) {
     return y >= this.yLimitMin && y <= this.yLimitMax;
-  };
-
-  this.setScale = function (scale) {
+  }
+  setScale(scale) {
     if (!scale) {
       throw new Error('Invalid scale set on Parallax layer:', scale);
     }
 
 
+
+
     var ds = scale - 1;
     var appliedScale = ds * this.scaleMultiplier + 1;
     this.style.scale = appliedScale;
-  };
-
-  this.getRelativeX = function (x) {
+  }
+  getRelativeX(x) {
     var s = this.style;
     return s.scale * (x - s.anchorX) + s.anchorX;
-  };
-
-  this.getRelativeY = function (y) {
+  }
+  getRelativeY(y) {
     var s = this.style;
     return s.scale * (y - s.anchorY) + s.anchorY;
-  };
-
-  this.spawnAllowedByPerformance = function () {
+  }
+  spawnAllowedByPerformance() {
     if (!this.performanceCutoff) {
       return true;
     }
 
 
+
+
     return performance.getPerformanceScore() > this.performanceCutoff;
-  };
-});
+  }
+};
 var LayerView = exports.LayerView;
 
 /**

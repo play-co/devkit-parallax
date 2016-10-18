@@ -1,3 +1,8 @@
+import {
+  merge,
+  logger
+} from 'base';
+
 import View from 'ui/View';
 import ImageView from 'ui/ImageView';
 import Image from 'ui/resource/Image';

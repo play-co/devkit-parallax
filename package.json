@@ -14,5 +14,10 @@
     "clientPaths": {
       "parallax": "src"
     }
+  },
+  "jsioWebpack": {
+    "alias": {
+      "devkit-parallax": "src"
+    }
   }
 }
